@@ -33,45 +33,34 @@
               <span class="required-note">updates instantly</span>
             </div>
 
-            <label class="field-label" for="region-select">Start with a region</label>
-            <div class="select-wrap">
-              <select id="region-select" aria-label="Choose a region preset">
-                <option value="Europe/Berlin">🇩🇪 Berlin / Germany</option>
-                <option value="Europe/London">🇬🇧 London / United Kingdom</option>
-                <option value="Europe/Paris">🇫🇷 Paris / France</option>
-                <option value="Europe/Stockholm">🇸🇪 Stockholm / Sweden</option>
-                <option value="Europe/Madrid">🇪🇸 Madrid / Spain</option>
-                <option value="Europe/Rome">🇮🇹 Rome / Italy</option>
-                <option value="Europe/Warsaw">🇵🇱 Warsaw / Poland</option>
-                <option value="America/New_York">🇺🇸 New York / USA East</option>
-                <option value="America/Los_Angeles">🇺🇸 Los Angeles / USA West</option>
-                <option value="America/Toronto">🇨🇦 Toronto / Canada</option>
-                <option value="America/Sao_Paulo">🇧🇷 São Paulo / Brazil</option>
-                <option value="America/Mexico_City">🇲🇽 Mexico City / Mexico</option>
-                <option value="Africa/Lagos">🇳🇬 Lagos / Nigeria</option>
-                <option value="Asia/Kolkata">🇮🇳 New Delhi / India</option>
-                <option value="Asia/Bangkok">🇹🇭 Bangkok / Thailand</option>
-                <option value="Asia/Jakarta">🇮🇩 Jakarta / Indonesia</option>
-                <option value="Asia/Tokyo">🇯🇵 Tokyo / Japan</option>
-                <option value="Asia/Seoul">🇰🇷 Seoul / South Korea</option>
-                <option value="Asia/Manila">🇵🇭 Manila / Philippines</option>
-                <option value="Australia/Sydney">🇦🇺 Sydney / Australia</option>
-                <option value="custom">⌘ Custom timezone…</option>
-              </select>
+            <label class="field-label" for="place-search">Where are you?</label>
+            <div class="place-search-wrap">
+              <input id="place-search" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="place-options" aria-describedby="place-hint" placeholder="Type a country or city, like Japan…" autocomplete="off" />
+              <div id="place-options" class="place-options" role="listbox" hidden></div>
+            </div>
+            <span class="field-hint" id="place-hint">Search by country or city, then pick the matching time zone.</span>
+
+            <div class="location-box">
+              <button id="use-location" class="location-button" type="button"><span aria-hidden="true">◎</span> Use my current location</button>
+              <span id="location-status" class="field-hint" role="status" aria-live="polite">Optional. Your browser will ask before sharing your location.</span>
+              <span class="field-hint location-privacy">With your permission, approximate GPS coordinates are sent to TimeAPI.io and BigDataCloud to look up your time zone and country. This app does not store them; those services’ privacy policies apply.</span>
             </div>
 
-            <div class="field-grid">
-              <div>
-                <label class="field-label" for="timezone-input">IANA timezone</label>
-                <input id="timezone-input" type="text" value="Europe/Berlin" spellcheck="false" autocomplete="off" />
-                <span class="field-hint">Example: <code>Asia/Tokyo</code></span>
+            <details class="advanced-options">
+              <summary>Advanced settings</summary>
+              <div class="field-grid">
+                <div>
+                  <label class="field-label" for="timezone-input">Time zone</label>
+                  <input id="timezone-input" type="text" value="Europe/Berlin" spellcheck="false" autocomplete="off" aria-describedby="timezone-hint" />
+                  <span class="field-hint" id="timezone-hint">For example, <code>Asia/Tokyo</code>.</span>
+                </div>
+                <div>
+                  <label class="field-label" for="flag-input">Flag code</label>
+                  <div class="input-with-prefix"><span>flagcdn.com/</span><input id="flag-input" type="text" value="de" maxlength="6" spellcheck="false" autocomplete="off" aria-describedby="flag-hint" /></div>
+                  <span class="field-hint" id="flag-hint">Usually set by your country.</span>
+                </div>
               </div>
-              <div>
-                <label class="field-label" for="flag-input">Flag code</label>
-                <div class="input-with-prefix"><span>https://flagcdn.com/</span><input id="flag-input" type="text" value="de" maxlength="6" spellcheck="false" autocomplete="off" aria-describedby="flag-hint" /></div>
-                <span class="field-hint" id="flag-hint">Two lowercase letters, e.g. <code>jp</code></span>
-              </div>
-            </div>
+            </details>
 
             <label class="field-label" for="label-input">Small label <span class="optional">optional</span></label>
             <input id="label-input" type="text" maxlength="28" placeholder="e.g. Berlin" autocomplete="off" />
@@ -121,16 +110,16 @@
         <section class="how-it-works" aria-labelledby="how-title">
           <div class="how-intro"><span class="section-index">FIELD NOTES</span><h2 id="how-title">A tiny image that<br /><em>keeps time.</em></h2><p>The clever bit lives at the link, not in your bio. AniList loads a fresh animated SVG, so your profile never needs to run code.</p></div>
           <div class="how-steps">
-            <article class="how-step"><span class="step-number">01</span><h3>Configure</h3><p>Choose your timezone and flag. Daylight saving changes are handled automatically by the timezone database.</p></article>
+            <article class="how-step"><span class="step-number">01</span><h3>Configure</h3><p>Search for your country or city. We pick the time zone and flag, and handle daylight saving automatically.</p></article>
             <article class="how-step"><span class="step-number">02</span><h3>Share</h3><p>Your options become URL parameters. Friends can open or reuse the same hosted endpoint with their own choices.</p></article>
             <article class="how-step"><span class="step-number">03</span><h3>Embed</h3><p>Paste the snippet into AniList’s About box. The image contains the flag, so it works safely inside a bio.</p></article>
           </div>
         </section>
 
         <section class="help-strip" aria-labelledby="help-title">
-          <div><span class="section-index">QUICK HELP</span><h2 id="help-title">Need a custom place?</h2></div>
-          <p>Use any IANA timezone such as <code>Africa/Lagos</code> or <code>Pacific/Auckland</code>. For flags, use a two-letter lowercase code such as <code>ng</code> or <code>nz</code>. Capital letters in timezones matter.</p>
-          <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones" target="_blank" rel="noreferrer">Browse timezone names <span>↗</span></a>
+          <div><span class="section-index">QUICK HELP</span><h2 id="help-title">Can’t find your place?</h2></div>
+          <p>Try a nearby city, or open Advanced settings to enter a time zone such as <code>Africa/Lagos</code>. You can also use the location button above; your browser will ask permission first.</p>
+          <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones" target="_blank" rel="noreferrer">Browse time zones <span>↗</span></a>
         </section>
       </main>
 

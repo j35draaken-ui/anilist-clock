@@ -63,6 +63,23 @@ select:focus, input:focus { border-color: var(--cyan-deep); box-shadow: 0 0 0 3p
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .field-hint { display: block; color: var(--muted); font-size: 11px; margin-top: 7px; line-height: 1.35; }
 code { font-family: var(--mono); color: var(--cyan-deep); font-size: .92em; }
+.place-search-wrap { position: relative; }
+.place-options { position: absolute; z-index: 5; top: calc(100% + 4px); left: 0; right: 0; max-height: 280px; overflow-y: auto; background: var(--white); border: 1px solid #b9cbc5; box-shadow: 0 12px 28px rgba(17,48,51,.16); }
+.place-option { display: flex; width: 100%; justify-content: space-between; gap: 12px; padding: 11px 12px; border: 0; border-bottom: 1px solid #e1e9e5; background: transparent; color: var(--ink); text-align: left; font-size: 12px; }
+.place-option:last-child { border-bottom: 0; }
+.place-option:hover, .place-option[aria-selected="true"] { background: #e8f5f3; }
+.place-option small { color: var(--muted); font-family: var(--mono); font-size: 9px; }
+.location-box { margin-top: 18px; padding: 14px; border: 1px solid #d2dfd9; background: #f5f8f5; }
+.location-button { min-height: 40px; padding: 0 12px; border: 1px solid #9ebbb4; background: var(--white); color: var(--ink); font-size: 12px; transition: background .18s, border-color .18s; }
+.location-button:hover { border-color: var(--cyan-deep); background: #e8f5f3; }
+.location-button:disabled { cursor: wait; opacity: .65; }
+.location-button span { color: var(--cyan-deep); margin-right: 5px; }
+.location-privacy { font-size: 10px; }
+.location-error { color: #9a493d; }
+.advanced-options { margin-top: 19px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.advanced-options summary { padding: 12px 0; color: var(--muted); font-family: var(--mono); font-size: 10px; letter-spacing: .055em; text-transform: uppercase; cursor: pointer; }
+.advanced-options .field-grid { padding-bottom: 14px; }
+.advanced-options .field-label { margin-top: 4px; }
 .input-with-prefix { min-height: 44px; display: flex; align-items: center; border: 1px solid #b9cbc5; border-radius: 2px; background: rgba(255,255,255,.55); overflow: hidden; transition: border-color .18s, box-shadow .18s; }
 .input-with-prefix:focus-within { border-color: var(--cyan-deep); box-shadow: 0 0 0 3px rgba(85,214,232,.18); background: var(--white); }
 .input-with-prefix span { font-family: var(--mono); font-size: 9px; color: var(--muted); padding-left: 10px; white-space: nowrap; }
