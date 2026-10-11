@@ -1,6 +1,6 @@
 # AniList Clock Studio
 
-A small app that creates animated clock images for AniList bios. The creator is served at `/`; generated images use `/clock.php` for hosting compatibility.
+A small app that creates animated clock images for AniList bios. The creator is served at `/`; generated images use `/clock.svg` for image-URL compatibility.
 
 ## Host on InfinityFree
 
@@ -9,10 +9,10 @@ The InfinityFree version uses PHP and Apache rewrites, so it does not need a Nod
 1. In the InfinityFree control panel, open the hosting account for `anilistime.free.nf` and its **File Manager**.
 2. Open the account's `htdocs` folder (InfinityFree's web root). If the File Manager hides dotfiles, enable hidden-file display before uploading `.htaccess`; use FTP if it will not accept that filename.
 3. Upload the contents of this project's `public/` folder directly into `htdocs`. This includes the `flags/` and `fonts/` folders; keep those folders and their contents in place.
-4. Upload `infinityfree/clock.php` directly into `htdocs`. `.htaccess` is optional; upload it only if you want old `/clock.svg` URLs and the `/_health` convenience route to keep working.
-5. Visit `https://anilistime.free.nf/`, then check `https://anilistime.free.nf/clock.php?tz=Asia%2FTokyo&flag=jp&label=Tokyo&theme=dark`.
+4. Upload `infinityfree/clock.php` and `infinityfree/.htaccess` directly into `htdocs`. The rewrite file is required for generated `/clock.svg` URLs to reach the PHP renderer.
+5. Visit `https://anilistime.free.nf/`, then check `https://anilistime.free.nf/clock.svg?tz=Asia%2FTokyo&flag=jp&label=Tokyo&theme=dark`.
 
-New clock links call `clock.php` directly, so they do not depend on Apache rewrite rules. Keep the PHP script in the same web-root folder as `index.html`. Without `.htaccess`, old `/clock.svg` links cannot be preserved on InfinityFree, but newly generated `/clock.php` links work directly. Do not upload `server.js` or the Dockerfile to InfinityFree; those are only for running the Node version locally or in a Node/Docker host.
+The `.htaccess` rewrite maps `/clock.svg` to `clock.php` while preserving its query parameters. Keep both files in the same web-root folder as `index.html`. Do not upload `server.js` or the Dockerfile to InfinityFree; those are only for running the Node version locally or in a Node/Docker host.
 
 All 256 FlagCDN codes accepted by the flag-code input are bundled locally; neither clock renderer makes outbound requests. Unsupported codes still show the neutral marker. Fonts are also self-hosted. The site needs no third-party service for its normal UI, preview, or clock images.
 
@@ -44,4 +44,4 @@ GPS coordinates are rounded to one decimal place (roughly 11 km) before they are
 
 ## Sharing a clock
 
-The creator updates a direct `/clock.php` URL and the AniList `~~~img(URL)~~~` snippet as settings change. Both contain the chosen time zone, flag, label, theme, map visibility and marker/night styling, daylight-badge visibility and colors, and optional coordinates. The Node server responds to both `/clock.php` and `/clock.svg`; the PHP host responds to `/clock.php` directly and supports `/clock.svg` when its rewrite rules are enabled.
+The creator updates a direct `/clock.svg` URL and the AniList `~~~img(URL)~~~` snippet as settings change. Both contain the chosen time zone, flag, label, theme, map visibility and marker/night styling, daylight-badge visibility and colors, and optional coordinates. The Node server responds to both `/clock.php` and `/clock.svg`; InfinityFree uses `.htaccess` to rewrite `/clock.svg` to the PHP renderer.

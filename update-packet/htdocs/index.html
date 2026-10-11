@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#081820" />
+    <meta name="description" content="Make a live animated clock for your AniList bio — no account or deployment required." />
+    <title>AniList Clock Studio — live bio clocks</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="AniList Clock Studio home">
+          <span class="brand-mark" aria-hidden="true"><span></span><i></i></span>
+          <span class="brand-copy"><strong>AniList</strong><small>CLOCK STUDIO</small></span>
+        </a>
+        <div class="topbar-note"><span class="live-dot"></span> Live SVG · no account required</div>
+      </header>
+
+      <main>
+        <section class="hero" aria-labelledby="page-title">
+          <div class="hero-kicker"><span class="kicker-line"></span> PROFILE UTILITY / 01</div>
+          <h1 id="page-title">Your local time,<br /><em>on your AniList.</em></h1>
+          <p class="hero-copy">Pick a region, make it yours, and copy one link. Your profile clock keeps ticking for everyone who visits.</p>
+          <div class="hero-proof"><span>01</span> configure <b>→</b> <span>02</span> copy <b>→</b> <span>03</span> paste into bio</div>
+        </section>
+
+        <section class="studio" aria-label="Clock builder">
+          <div class="builder-panel panel">
+            <div class="panel-heading">
+              <div><span class="section-index">A / CONFIGURE</span><h2>Make your clock</h2></div>
+              <span class="required-note">updates instantly</span>
+            </div>
+
+            <label class="field-label" for="place-search">Where are you?</label>
+            <div class="place-search-wrap">
+              <input id="place-search" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="place-options" aria-describedby="place-hint" placeholder="Type a country or city, like Japan…" autocomplete="off" />
+              <div id="place-options" class="place-options" role="listbox" hidden></div>
+            </div>
+            <span class="field-hint" id="place-hint">Search by country or city, then pick the matching time zone.</span>
+
+            <div class="location-box">
+              <div class="location-actions">
+                <button id="use-location" class="location-button" type="button"><span aria-hidden="true">◎</span> Use my current location</button>
+                <button id="use-device-timezone" class="location-button" type="button"><span aria-hidden="true">◷</span> Use device time zone (offline)</button>
+              </div>
+              <span id="location-status" class="field-hint" role="status" aria-live="polite">GPS lookup is optional and runs only when requested.</span>
+              <span id="device-timezone-status" class="field-hint" role="status" aria-live="polite">The offline option reads your browser's configured time zone; it does not identify your city or country.</span>
+              <span class="field-hint location-privacy">GPS lookup sends approximate coordinates from your browser to TimeAPI.io and BigDataCloud. It also adds coordinates rounded to about 11 km to the shareable image URL. Use device time zone or city search to avoid GPS lookup; clear coordinates in the daylight settings to remove them from the link.</span>
+            </div>
+
+            <details class="advanced-options">
+              <summary>Advanced settings</summary>
+              <div class="field-grid">
+                <div>
+                  <label class="field-label" for="timezone-input">Time zone</label>
+                  <input id="timezone-input" type="text" value="" placeholder="Europe/Paris" spellcheck="false" autocomplete="off" aria-describedby="timezone-hint" />
+                  <span class="field-hint" id="timezone-hint">For example, <code>Asia/Tokyo</code>.</span>
+                </div>
+                <div>
+                  <label class="field-label" for="flag-input">Flag code</label>
+                  <div class="input-with-prefix"><span>flag code</span><input id="flag-input" type="text" value="" maxlength="6" spellcheck="false" autocomplete="off" aria-describedby="flag-hint" /></div>
+                  <span class="field-hint" id="flag-hint">Updates with a selected place; edit this to set a manual flag.</span>
+                </div>
+              </div>
+            </details>
+
+            <label class="field-label" for="label-input">Small label <span class="optional">optional</span></label>
+            <input id="label-input" type="text" maxlength="28" placeholder="e.g. Tokyo" autocomplete="off" />
+            <span class="field-hint">Used as the location label after the clock.</span>
+
+            <details class="advanced-options">
+              <summary>Location &amp; daylight badge</summary>
+              <label class="toggle-field"><input id="sun-enabled" type="checkbox" checked /> Show day/night indicator</label>
+              <div class="field-grid daylight-grid">
+                <div>
+                  <label class="field-label" for="latitude-input">Latitude</label>
+                  <input id="latitude-input" type="number" min="-90" max="90" step="any" placeholder="Optional, e.g. 52.52" />
+                </div>
+                <div>
+                  <label class="field-label" for="longitude-input">Longitude</label>
+                  <input id="longitude-input" type="number" min="-180" max="180" step="any" placeholder="Optional, e.g. 13.405" />
+                </div>
+              </div>
+              <span class="field-hint">Coordinates make daylight status solar-accurate. Without them, the badge estimates daytime as 06:00–18:00 local time. Coordinates are included in the shared image URL; GPS coordinates are rounded to about 11 km.</span>
+              <div class="field-grid daylight-colors">
+                <label class="color-field" for="dot-color">Location dot<input id="dot-color" type="color" value="#2bd576" /></label>
+                <label class="color-field" for="day-color">Day color<input id="day-color" type="color" value="#f2c94c" /></label>
+                <label class="color-field" for="night-color">Night color<input id="night-color" type="color" value="#83aaff" /></label>
+              </div>
+            </details>
+
+            <details class="advanced-options map-options" open>
+              <summary>Location map</summary>
+              <label class="toggle-field"><input id="map-enabled" type="checkbox" checked /> Include map in the clock image</label>
+              <label class="color-field" for="map-marker-color">Location marker<input id="map-marker-color" type="color" value="#5ae682" /></label>
+              <label class="range-field" for="map-marker-size"><span>Location marker size</span><output id="map-marker-size-value" for="map-marker-size">6</output></label>
+              <input id="map-marker-size" class="range-input" type="range" min="3" max="12" step="1" value="6" />
+              <label class="range-field" for="map-night-strength"><span>Night shading strength</span><output id="map-night-strength-value" for="map-night-strength">1×</output></label>
+              <input id="map-night-strength" class="range-input" type="range" min="0.6" max="1.4" step="0.1" value="1" />
+              <span class="field-hint">The original world map, moving solar boundary, twilight bands, and sun marker are embedded in the image. Move the location marker by choosing a place or changing the coordinates above.</span>
+            </details>
+
+            <div class="theme-row">
+              <div><span class="field-label">Visual theme</span><span class="field-hint">Choose the mood that matches your profile.</span></div>
+              <div class="theme-switch" role="group" aria-label="Visual theme">
+                <button class="theme-choice active" type="button" data-theme="dark"><span class="theme-swatch dark-swatch"></span> Ink</button>
+                <button class="theme-choice" type="button" data-theme="light"><span class="theme-swatch light-swatch"></span> Paper</button>
+              </div>
+            </div>
+
+            <div id="config-warning" class="config-warning" hidden></div>
+          </div>
+
+          <div class="preview-column">
+            <div class="preview-panel panel dark-panel">
+              <div class="panel-heading preview-heading">
+                <div><span class="section-index cyan-text">B / PREVIEW</span><h2>Looks good in motion</h2></div>
+                <span class="live-badge"><span class="live-dot"></span> live</span>
+              </div>
+              <div class="preview-canvas" id="preview-canvas">
+                <div class="measure measure-top"><span>00</span><i></i><span>30</span><i></i><span>60</span></div>
+                <div class="preview-center"><div class="preview-caption">CURRENT CONFIGURATION</div><img id="clock-preview" src="/clock.php" alt="Animated clock preview" /></div>
+                <div class="measure measure-bottom"><span>ANI</span><i></i><span>LIST</span><i></i><span>SVG</span></div>
+              </div>
+              <div class="preview-meta"><span id="preview-region">Your local time</span><span class="meta-separator">·</span><span id="preview-status">refreshes every second</span></div>
+            </div>
+
+            <div class="share-panel panel">
+              <div class="share-heading"><div><span class="section-index coral-text">C / SHARE</span><h2>Copy it into your bio</h2></div><span class="tape-label">ONE LINK</span></div>
+              <p class="share-intro">This is the direct image URL AniList can display. It already contains your choices.</p>
+              <div class="output-block">
+                <div class="output-label"><span>DIRECT IMAGE URL</span><button type="button" class="copy-button" data-copy-target="direct-url">Copy link</button></div>
+                <code id="direct-url" class="output-value"></code>
+              </div>
+              <div class="output-block snippet-block">
+                <div class="output-label"><span>ANILIST BIO SNIPPET</span><button type="button" class="copy-button" data-copy-target="bio-snippet">Copy snippet</button></div>
+                <code id="bio-snippet" class="output-value"></code>
+              </div>
+              <div class="share-footnote"><span class="mini-check">✓</span> No Cloudflare setup. No personal deployment. Copy once, share anywhere.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="how-it-works" aria-labelledby="how-title">
+          <div class="how-intro"><span class="section-index">FIELD NOTES</span><h2 id="how-title">A tiny image that<br /><em>keeps time.</em></h2><p>The clever bit lives at the link, not in your bio. AniList loads a fresh animated SVG, so your profile never needs to run code.</p></div>
+          <div class="how-steps">
+            <article class="how-step"><span class="step-number">01</span><h3>Configure</h3><p>Search for your country or city. We pick the time zone and flag, and handle daylight saving automatically.</p></article>
+            <article class="how-step"><span class="step-number">02</span><h3>Share</h3><p>Your options become URL parameters. Friends can open or reuse the same hosted endpoint with their own choices.</p></article>
+            <article class="how-step"><span class="step-number">03</span><h3>Embed</h3><p>Paste the snippet into AniList’s About box. The image contains the flag, so it works safely inside a bio.</p></article>
+          </div>
+        </section>
+
+        <section class="help-strip" aria-labelledby="help-title">
+          <div><span class="section-index">QUICK HELP</span><h2 id="help-title">Can’t find your place?</h2></div>
+          <p>Try a nearby city, or open Advanced settings to enter a time zone such as <code>Africa/Lagos</code>. The device time-zone button uses your browser setting without GPS or a network lookup.</p>
+          <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones" target="_blank" rel="noreferrer">Browse time zones <span>↗</span></a>
+        </section>
+      </main>
+
+      <footer class="footer"><span>ANI / CLOCK STUDIO</span><span>Built for profiles that feel like yours.</span><span>UTC is never the only time.</span></footer>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

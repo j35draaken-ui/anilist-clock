@@ -313,7 +313,7 @@ function makeImageUrl() {
   params.set('mapdot', state.mapdot);
   params.set('mapnight', state.mapnight);
   params.set('v', IMAGE_VERSION);
-  return `${window.location.origin}/clock.php?${params.toString()}`;
+  return `${window.location.origin}/clock.svg?${params.toString()}`;
 }
 
 function coordinatesAreValid() {

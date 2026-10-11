@@ -1,0 +1,4 @@
+DirectoryIndex index.html
+RewriteEngine On
+RewriteRule ^clock\.svg$ clock.php [L,QSA]
+RewriteRule ^_health$ clock.php?health=1 [L,QSA]
