@@ -141,6 +141,7 @@ const locationStatus = $('location-status');
 const deviceTimeZoneStatus = $('device-timezone-status');
 let visiblePlaces = [];
 let activePlaceIndex = -1;
+let flagMode = 'auto';
 
 function timezoneIsValid(timeZone) {
   try {
@@ -174,10 +175,19 @@ function getPresetName(timeZone) {
 function applyQueryState() {
   const params = new URLSearchParams(window.location.search);
   if (params.has('tz')) state.tz = params.get('tz') || state.tz;
-  if (params.has('flag')) state.flag = (params.get('flag') || '').toLowerCase();
+  const place = getPlace(state.tz);
+  if (params.has('flag')) {
+    state.flag = (params.get('flag') || '').toLowerCase();
+    flagMode = 'manual';
+  } else if (place) {
+    state.flag = place[3];
+    flagMode = 'auto';
+  } else if (params.has('tz')) {
+    state.flag = '';
+    flagMode = 'auto';
+  }
   if (params.has('label')) state.label = params.get('label') || '';
   if (params.has('theme')) state.theme = params.get('theme') === 'light' ? 'light' : 'dark';
-  const place = getPlace(state.tz);
   placeSearch.value = place ? placeLabel(place) : '';
   if (!place) document.querySelector('.advanced-options').open = true;
 }
@@ -266,6 +276,7 @@ function renderPlaceOptions(searchTerm) {
 function choosePlace(place) {
   state.tz = place[2];
   state.flag = place[3];
+  flagMode = 'auto';
   if (!state.label || PLACES.some((item) => item[1] === state.label)) state.label = place[1];
   placeSearch.value = placeLabel(place);
   renderPlaceOptions('');
@@ -284,10 +295,11 @@ function useDeviceTimeZone() {
   state.tz = timeZone;
   if (place) {
     state.flag = place[3];
+    flagMode = 'auto';
     if (!state.label || PLACES.some((item) => item[1] === state.label)) state.label = place[1];
     placeSearch.value = placeLabel(place);
   } else {
-    state.flag = '';
+    if (flagMode === 'auto') state.flag = '';
     placeSearch.value = '';
   }
   renderPlaceOptions('');
@@ -330,6 +342,7 @@ async function lookupLocation(latitude, longitude) {
   const locality = placeResult.city || placeResult.locality || placeResult.principalSubdivision;
   state.tz = timeZone;
   state.flag = countryCode.toLowerCase();
+  flagMode = 'auto';
   if (locality) state.label = locality.slice(0, 28);
   placeSearch.value = locality ? `${locality} · ${countryName}` : countryName;
   renderPlaceOptions('');
@@ -437,10 +450,22 @@ document.addEventListener('click', (event) => {
 
 timezoneInput.addEventListener('input', () => {
   state.tz = timezoneInput.value.trim();
-  placeSearch.value = '';
+  const place = getPlace(state.tz);
+  if (place) {
+    state.flag = place[3];
+    flagMode = 'auto';
+    placeSearch.value = placeLabel(place);
+  } else {
+    if (flagMode === 'auto') state.flag = '';
+    placeSearch.value = '';
+  }
   render();
 });
-flagInput.addEventListener('input', () => { state.flag = flagInput.value.trim().toLowerCase(); render(); });
+flagInput.addEventListener('input', () => {
+  state.flag = flagInput.value.trim().toLowerCase();
+  flagMode = 'manual';
+  render();
+});
 labelInput.addEventListener('input', () => { state.label = labelInput.value.slice(0, 28); render(); });
 document.querySelectorAll('.theme-choice').forEach((button) => button.addEventListener('click', () => { state.theme = button.dataset.theme; render(); }));
 document.querySelectorAll('[data-copy-target]').forEach((button) => button.addEventListener('click', () => copyText($(button.dataset.copyTarget).textContent, button)));
