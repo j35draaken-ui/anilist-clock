@@ -164,6 +164,7 @@ const PLACE_COORDINATES = {
 
 const DEFAULT_TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 const DEFAULT_PLACE = PLACES.find((place) => place[2] === DEFAULT_TIME_ZONE);
+const IMAGE_VERSION = '20261011';
 const state = {
   tz: DEFAULT_TIME_ZONE,
   flag: DEFAULT_PLACE?.[3] || '',
@@ -311,6 +312,7 @@ function makeImageUrl() {
   params.set('mapmarker', state.mapmarker);
   params.set('mapdot', state.mapdot);
   params.set('mapnight', state.mapnight);
+  params.set('v', IMAGE_VERSION);
   return `${window.location.origin}/clock.php?${params.toString()}`;
 }
 
