@@ -138,6 +138,7 @@ const warning = $('config-warning');
 const toast = $('toast');
 const locationButton = $('use-location');
 const locationStatus = $('location-status');
+const deviceTimeZoneStatus = $('device-timezone-status');
 let visiblePlaces = [];
 let activePlaceIndex = -1;
 
@@ -187,7 +188,7 @@ function makeImageUrl() {
   if (state.flag) params.set('flag', state.flag);
   if (state.label) params.set('label', state.label);
   params.set('theme', state.theme);
-  return `${window.location.origin}/clock.svg?${params.toString()}`;
+  return `${window.location.origin}/clock.php?${params.toString()}`;
 }
 
 function syncControls() {
@@ -271,6 +272,31 @@ function choosePlace(place) {
   render();
 }
 
+function useDeviceTimeZone() {
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  if (typeof timeZone !== 'string' || !timezoneIsValid(timeZone)) {
+    deviceTimeZoneStatus.textContent = 'This browser did not provide a recognized time zone. Search for your country or city instead.';
+    return;
+  }
+
+  const place = getPlace(timeZone);
+  document.querySelector('.advanced-options').open = !place;
+  state.tz = timeZone;
+  if (place) {
+    state.flag = place[3];
+    if (!state.label || PLACES.some((item) => item[1] === state.label)) state.label = place[1];
+    placeSearch.value = placeLabel(place);
+  } else {
+    state.flag = '';
+    placeSearch.value = '';
+  }
+  renderPlaceOptions('');
+  render();
+  deviceTimeZoneStatus.textContent = place
+    ? `Using this device's time zone: ${timeZone}.`
+    : `Using this device's time zone: ${timeZone}. Search for a city to add its flag.`;
+}
+
 function setLocationStatus(message, isError = false) {
   locationStatus.textContent = message;
   locationStatus.classList.toggle('location-error', isError);
@@ -282,22 +308,22 @@ async function lookupLocation(latitude, longitude) {
     fetch(`https://timeapi.io/api/TimeZone/coordinate?${coordinates}`),
     fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?${coordinates}&localityLanguage=en`),
   ]);
-  if (!timeZoneResponse.ok || !placeResponse.ok) throw new Error('The location lookup service is unavailable. Try searching for your country or city instead.');
+  if (!timeZoneResponse.ok || !placeResponse.ok) {
+    throw new Error('The location lookup services are unavailable. Use the offline time-zone button or search for a city.');
+  }
 
   let timeZoneResult;
   let placeResult;
   try {
-    [timeZoneResult, placeResult] = await Promise.all([
-      timeZoneResponse.json(),
-      placeResponse.json(),
-    ]);
+    [timeZoneResult, placeResult] = await Promise.all([timeZoneResponse.json(), placeResponse.json()]);
   } catch {
-    throw new Error('The location lookup services returned unreadable data. Search for your country or city instead.');
+    throw new Error('The location lookup services returned unreadable data. Use the offline time-zone button or search for a city.');
   }
+
   const timeZone = timeZoneResult?.timeZone;
   const countryCode = placeResult?.countryCode;
   if (!timezoneIsValid(timeZone) || !/^[a-z]{2}$/i.test(countryCode || '')) {
-    throw new Error('We could not match that location to a time zone and country. Try searching for your country or city instead.');
+    throw new Error('We could not match that location. Use the offline time-zone button or search for a city.');
   }
 
   const countryName = placeResult.countryName || new Intl.DisplayNames([navigator.language], { type: 'region' }).of(countryCode);
@@ -312,35 +338,41 @@ async function lookupLocation(latitude, longitude) {
 
 function useCurrentLocation() {
   if (!window.isSecureContext) {
-    setLocationStatus('Location lookup requires a secure connection (HTTPS). Search for your country or city instead.', true);
+    setLocationStatus('GPS lookup requires HTTPS. Use the offline time-zone button or search for a city instead.', true);
     return;
   }
   if (!navigator.geolocation) {
-    setLocationStatus('Location is not available in this browser. Search for your country or city instead.', true);
+    setLocationStatus('Location is unavailable in this browser. Use the offline time-zone button or search for a city.', true);
     return;
   }
+
   locationButton.disabled = true;
   setLocationStatus('Waiting for location permission…');
   navigator.geolocation.getCurrentPosition(async ({ coords }) => {
-    setLocationStatus('Finding your time zone and country…');
+    setLocationStatus('Looking up your time zone and country…');
     try {
       await lookupLocation(coords.latitude, coords.longitude);
       setLocationStatus('Location found. You can change it any time by searching above.');
     } catch (error) {
-      let message = 'Could not look up this location. Search for your country or city instead.';
-      if (error instanceof TypeError) message = 'Could not reach the location lookup services. Search for your country or city instead.';
-      else if (error instanceof Error) message = error.message || message;
-      setLocationStatus(message, true);
+      const message = error instanceof TypeError
+        ? 'Could not reach the location lookup services. Use the offline time-zone button or search for a city.'
+        : error instanceof Error
+          ? error.message
+          : 'Could not look up this location. Use the offline time-zone button or search for a city.';
+      setLocationStatus(
+        message,
+        true,
+      );
     } finally {
       locationButton.disabled = false;
     }
   }, (error) => {
     const messages = {
-      1: 'Location permission was not granted. You can search for your country or city instead.',
-      2: 'Your location could not be determined. Try searching for your country or city instead.',
-      3: 'The location request timed out. Try again or search for your country or city.',
+      1: 'Location permission was not granted. Use the offline time-zone button or search for a city.',
+      2: 'Your location could not be determined. Try again or search for a city.',
+      3: 'The location request timed out. Try again or search for a city.',
     };
-    setLocationStatus(messages[error.code] || 'Could not get your location. Search for your country or city instead.', true);
+    setLocationStatus(messages[error.code] || 'Could not get your location. Search for a city instead.', true);
     locationButton.disabled = false;
   }, { enableHighAccuracy: false, maximumAge: 60000, timeout: 15000 });
 }
@@ -413,6 +445,7 @@ labelInput.addEventListener('input', () => { state.label = labelInput.value.slic
 document.querySelectorAll('.theme-choice').forEach((button) => button.addEventListener('click', () => { state.theme = button.dataset.theme; render(); }));
 document.querySelectorAll('[data-copy-target]').forEach((button) => button.addEventListener('click', () => copyText($(button.dataset.copyTarget).textContent, button)));
 locationButton.addEventListener('click', useCurrentLocation);
+document.querySelector('#use-device-timezone').addEventListener('click', useDeviceTimeZone);
 
 applyQueryState();
 render();

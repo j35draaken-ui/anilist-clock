@@ -3,7 +3,7 @@
 - [x] A responsive creator interface lets visitors configure an animated clock image on desktop and mobile.
 - [x] Popular region presets and a custom IANA timezone control support automatic daylight-saving-time handling.
 - [x] A searchable country/city picker sets the matching time zone and flag without requiring visitors to know technical codes.
-- [x] An optional, user-initiated location lookup asks for browser permission and clearly discloses its external time-zone and reverse-geocoding services.
+- [x] Optional GPS lookup and an offline device-time-zone shortcut provide location convenience with and without external lookup services.
 - [x] Country or regional flag selection uses flag codes and bakes the selected flag into the generated SVG for AniList image compatibility.
 - [x] Optional custom labels and selectable dark/light visual themes update the result.
 - [x] A live preview updates as settings change and shows hours, minutes, and seconds.
@@ -12,4 +12,4 @@
 - [x] The UI exposes a direct image URL and AniList-compatible `~~~img(URL)~~~` snippet, each with a dedicated copy button.
 - [x] Invalid or unsupported timezone and flag values produce friendly rendered fallbacks instead of broken output.
 - [x] Built-in help explains configuration, embedding, URL sharing, and AniList usage.
-- [ ] The finished app is hosted through the project’s public deployment.
+- [ ] Upload the static UI and PHP endpoint to the `anilistime.free.nf` InfinityFree account and verify the public image URL.

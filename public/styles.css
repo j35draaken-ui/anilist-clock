@@ -1,4 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@font-face { font-family: 'DM Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/dm-mono-400.ttf') format('truetype'); }
+@font-face { font-family: 'DM Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url('/fonts/dm-mono-500.ttf') format('truetype'); }
+@font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 400; font-display: swap; src: url('/fonts/space-grotesk-400.ttf') format('truetype'); }
+@font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 500; font-display: swap; src: url('/fonts/space-grotesk-500.ttf') format('truetype'); }
+@font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/space-grotesk-600.ttf') format('truetype'); }
+@font-face { font-family: 'Space Grotesk'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/space-grotesk-700.ttf') format('truetype'); }
 
 :root {
   --ink: #07141b;
@@ -70,6 +75,7 @@ code { font-family: var(--mono); color: var(--cyan-deep); font-size: .92em; }
 .place-option:hover, .place-option[aria-selected="true"] { background: #e8f5f3; }
 .place-option small { color: var(--muted); font-family: var(--mono); font-size: 9px; }
 .location-box { margin-top: 18px; padding: 14px; border: 1px solid #d2dfd9; background: #f5f8f5; }
+.location-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .location-button { min-height: 40px; padding: 0 12px; border: 1px solid #9ebbb4; background: var(--white); color: var(--ink); font-size: 12px; transition: background .18s, border-color .18s; }
 .location-button:hover { border-color: var(--cyan-deep); background: #e8f5f3; }
 .location-button:disabled { cursor: wait; opacity: .65; }

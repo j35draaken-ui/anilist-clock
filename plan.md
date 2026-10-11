@@ -6,11 +6,11 @@ Build a public, account-free creator for animated clock images that users can em
 
 ## Implementation approach
 
-- Use a dependency-free Node 22 HTTP server so the hosted runtime has no package-install or bundler risk.
+- Use a dependency-free Node 22 HTTP server for local development and container hosting, plus a PHP endpoint and Apache rewrite for InfinityFree shared hosting.
 - Serve a responsive static creator UI from `public/`.
-- Serve `/clock.svg` from the same origin. The endpoint validates query values, derives current time with `Intl.DateTimeFormat` and an IANA timezone, fetches and base64-embeds a flag SVG server-side, then returns an animated SMIL SVG with `Cache-Control: no-store`.
+- Serve the animated image from same-origin `/clock.php` URLs so shared hosting does not need rewrites for generated images. Both renderers also keep `/clock.svg` compatibility routes where supported, validate query values, derive time from an IANA timezone, and use all bundled FlagCDN codes accepted by the existing flag input without outbound requests.
 - Keep all creator state in the URL controls and generated image URL; no account, database, cookies, or saved records are required.
-- Use a Dockerfile and the Webdev server deployment contract so the same process serves the UI, health check, and image endpoint.
+- Keep the Dockerfile for container hosting; the InfinityFree deployment consists of the static UI, PHP image endpoint, and `.htaccess` rewrite rules.
 - Provide concise built-in help explaining the direct image URL, AniList syntax, and sharing behavior.
 
 ## Project structure
@@ -19,9 +19,9 @@ Build a public, account-free creator for animated clock images that users can em
 - `public/index.html` — creator markup, accessible controls, copy actions, live configuration summary, and help content.
 - `public/styles.css` — visual system and responsive layout.
 - `public/app.js` — preset selection, URL generation, preview refresh, clipboard actions, and small UI state.
-- `public/manus-routes.json` — route manifest for the single page.
-- `Dockerfile` / `package.json` — reproducible server startup and publish contract.
-- `app.config.ts` — platform project logo metadata.
+- `infinityfree/clock.php` and `infinityfree/.htaccess` — PHP clock renderer and Apache routes for shared hosting.
+- `public/flags/` and `public/fonts/` — self-hosted flag and font assets.
+- `Dockerfile` / `package.json` — reproducible Node.js startup for local or container hosting.
 
 ## Design direction
 

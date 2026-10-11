@@ -18,6 +18,7 @@ const CONTENT_TYPES = {
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml; charset=utf-8',
+  '.ttf': 'font/ttf',
   '.ico': 'image/x-icon',
 };
 
@@ -56,9 +57,8 @@ async function loadFlag(code) {
   if (!code) return { markup: '', found: false };
 
   try {
-    const response = await fetch(`https://flagcdn.com/${code}.svg`);
-    if (!response.ok) return { markup: neutralFlag(), found: false };
-    const encoded = Buffer.from(await response.text(), 'utf8').toString('base64');
+    const body = await fs.readFile(path.join(PUBLIC_DIR, 'flags', `${code}.svg`));
+    const encoded = body.toString('base64');
     return {
       markup: `<image href="data:image/svg+xml;base64,${encoded}" width="18" height="12" preserveAspectRatio="none" clip-path="url(#flagCorners)"/>`,
       found: true,
@@ -174,7 +174,7 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
-  if (url.pathname === '/clock.svg') {
+  if (url.pathname === '/clock.svg' || url.pathname === '/clock.php') {
     const svg = await renderClock(url);
     response.writeHead(200, {
       'Content-Type': 'image/svg+xml; charset=utf-8',

@@ -41,9 +41,13 @@
             <span class="field-hint" id="place-hint">Search by country or city, then pick the matching time zone.</span>
 
             <div class="location-box">
-              <button id="use-location" class="location-button" type="button"><span aria-hidden="true">◎</span> Use my current location</button>
-              <span id="location-status" class="field-hint" role="status" aria-live="polite">Optional. Your browser will ask before sharing your location.</span>
-              <span class="field-hint location-privacy">With your permission, approximate GPS coordinates are sent to TimeAPI.io and BigDataCloud to look up your time zone and country. This app does not store them; those services’ privacy policies apply.</span>
+              <div class="location-actions">
+                <button id="use-location" class="location-button" type="button"><span aria-hidden="true">◎</span> Use my current location</button>
+                <button id="use-device-timezone" class="location-button" type="button"><span aria-hidden="true">◷</span> Use device time zone (offline)</button>
+              </div>
+              <span id="location-status" class="field-hint" role="status" aria-live="polite">GPS lookup is optional and runs only when requested.</span>
+              <span id="device-timezone-status" class="field-hint" role="status" aria-live="polite">The offline option reads your browser's configured time zone; it does not identify your city or country.</span>
+              <span class="field-hint location-privacy">GPS lookup sends approximate coordinates from your browser to TimeAPI.io and BigDataCloud. Use device time zone or city search to avoid those external lookups.</span>
             </div>
 
             <details class="advanced-options">
@@ -56,8 +60,8 @@
                 </div>
                 <div>
                   <label class="field-label" for="flag-input">Flag code</label>
-                  <div class="input-with-prefix"><span>flagcdn.com/</span><input id="flag-input" type="text" value="de" maxlength="6" spellcheck="false" autocomplete="off" aria-describedby="flag-hint" /></div>
-                  <span class="field-hint" id="flag-hint">Usually set by your country.</span>
+                  <div class="input-with-prefix"><span>flag code</span><input id="flag-input" type="text" value="de" maxlength="6" spellcheck="false" autocomplete="off" aria-describedby="flag-hint" /></div>
+                  <span class="field-hint" id="flag-hint">Picker flags and common UK nation flags are stored locally.</span>
                 </div>
               </div>
             </details>
@@ -85,7 +89,7 @@
               </div>
               <div class="preview-canvas" id="preview-canvas">
                 <div class="measure measure-top"><span>00</span><i></i><span>30</span><i></i><span>60</span></div>
-                <div class="preview-center"><div class="preview-caption">CURRENT CONFIGURATION</div><img id="clock-preview" src="/clock.svg?tz=Europe%2FBerlin&amp;flag=de&amp;theme=dark" alt="Animated clock preview" /></div>
+                <div class="preview-center"><div class="preview-caption">CURRENT CONFIGURATION</div><img id="clock-preview" src="/clock.php?tz=Europe%2FBerlin&amp;flag=de&amp;theme=dark" alt="Animated clock preview" /></div>
                 <div class="measure measure-bottom"><span>ANI</span><i></i><span>LIST</span><i></i><span>SVG</span></div>
               </div>
               <div class="preview-meta"><span id="preview-region">Berlin / Europe</span><span class="meta-separator">·</span><span id="preview-status">refreshes every second</span></div>
@@ -118,7 +122,7 @@
 
         <section class="help-strip" aria-labelledby="help-title">
           <div><span class="section-index">QUICK HELP</span><h2 id="help-title">Can’t find your place?</h2></div>
-          <p>Try a nearby city, or open Advanced settings to enter a time zone such as <code>Africa/Lagos</code>. You can also use the location button above; your browser will ask permission first.</p>
+          <p>Try a nearby city, or open Advanced settings to enter a time zone such as <code>Africa/Lagos</code>. The device time-zone button uses your browser setting without GPS or a network lookup.</p>
           <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones" target="_blank" rel="noreferrer">Browse time zones <span>↗</span></a>
         </section>
       </main>
