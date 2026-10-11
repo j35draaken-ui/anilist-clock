@@ -94,15 +94,12 @@
             <details class="advanced-options map-options" open>
               <summary>Location map</summary>
               <label class="toggle-field"><input id="map-enabled" type="checkbox" checked /> Include map in the clock image</label>
-              <div class="field-grid map-colors">
-                <label class="color-field" for="map-water">Map background<input id="map-water" type="color" value="#10242c" /></label>
-                <label class="color-field" for="map-land">Land color<input id="map-land" type="color" value="#31545a" /></label>
-                <label class="color-field" for="map-grid">Map detail<input id="map-grid" type="color" value="#557279" /></label>
-                <label class="color-field" for="map-marker-color">Marker color<input id="map-marker-color" type="color" value="#2bd576" /></label>
-              </div>
-              <label class="range-field" for="map-marker-size"><span>Location marker size</span><output id="map-marker-size-value" for="map-marker-size">4</output></label>
-              <input id="map-marker-size" class="range-input" type="range" min="2" max="7" step="1" value="4" />
-              <span class="field-hint">The map is drawn in the image itself, so it works in AniList without external tiles. Set coordinates above or use GPS for a precise marker.</span>
+              <label class="color-field" for="map-marker-color">Location marker<input id="map-marker-color" type="color" value="#5ae682" /></label>
+              <label class="range-field" for="map-marker-size"><span>Location marker size</span><output id="map-marker-size-value" for="map-marker-size">6</output></label>
+              <input id="map-marker-size" class="range-input" type="range" min="3" max="12" step="1" value="6" />
+              <label class="range-field" for="map-night-strength"><span>Night shading strength</span><output id="map-night-strength-value" for="map-night-strength">1×</output></label>
+              <input id="map-night-strength" class="range-input" type="range" min="0.6" max="1.4" step="0.1" value="1" />
+              <span class="field-hint">The original world map, moving solar boundary, twilight bands, and sun marker are embedded in the image. Move the location marker by choosing a place or changing the coordinates above.</span>
             </details>
 
             <div class="theme-row">

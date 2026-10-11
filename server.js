@@ -18,6 +18,7 @@ const CONTENT_TYPES = {
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.svg': 'image/svg+xml; charset=utf-8',
+  '.jpg': 'image/jpeg',
   '.ttf': 'font/ttf',
   '.ico': 'image/x-icon',
 };
@@ -73,13 +74,103 @@ function normalizeColor(value, fallback) {
   return /^#[0-9a-f]{6}$/i.test(value || '') ? value : fallback;
 }
 
-function locationMap(x, latitude, longitude, coordinatesProvided, options) {
-  const { water, land, grid, markerColor, markerSize } = options;
+function solarPosition(timestamp) {
+  const julianDate = timestamp / 86400 + 2440587.5;
+  const century = (julianDate - 2451545) / 36525;
+  const meanLongitude = ((280.46646 + century * (36000.76983 + 0.0003032 * century)) % 360 + 360) % 360;
+  const meanAnomaly = ((357.52911 + century * (35999.05029 - 0.0001537 * century)) % 360) * Math.PI / 180;
+  const equationOfCenter = (1.914602 - century * (0.004817 + 0.000014 * century)) * Math.sin(meanAnomaly)
+    + (0.019993 - 0.000101 * century) * Math.sin(2 * meanAnomaly)
+    + 0.000289 * Math.sin(3 * meanAnomaly);
+  const omega = (125.04 - 1934.136 * century) * Math.PI / 180;
+  const lambda = (meanLongitude + equationOfCenter - 0.00569 - 0.00478 * Math.sin(omega)) * Math.PI / 180;
+  const obliquity = (23.439291 - 0.0130042 * century + 0.00256 * Math.cos(omega)) * Math.PI / 180;
+  const declination = Math.asin(Math.sin(obliquity) * Math.sin(lambda)) * 180 / Math.PI;
+  const meanLongitudeRadians = meanLongitude * Math.PI / 180;
+  const eccentricity = 0.016708634 - century * (0.000042037 + 0.0000001267 * century);
+  const y = Math.tan(obliquity / 2) ** 2;
+  const equationOfTime = 4 * (180 / Math.PI) * (
+    y * Math.sin(2 * meanLongitudeRadians)
+    - 2 * eccentricity * Math.sin(meanAnomaly)
+    + 4 * eccentricity * y * Math.sin(meanAnomaly) * Math.cos(2 * meanLongitudeRadians)
+    - 0.5 * y * y * Math.sin(4 * meanLongitudeRadians)
+    - 1.25 * eccentricity * eccentricity * Math.sin(2 * meanAnomaly)
+  );
+  const date = new Date(timestamp * 1000);
+  const utcHours = date.getUTCHours() + date.getUTCMinutes() / 60 + date.getUTCSeconds() / 3600;
+  const subsolarLongitude = ((180 - 15 * utcHours - equationOfTime / 4 + 180) % 360 + 360) % 360 - 180;
+  return { declination, subsolarLongitude };
+}
+
+function twilightPaths(timestamp, width = 480, height = 240) {
+  const { declination, subsolarLongitude } = solarPosition(timestamp);
+  const declinationRadians = declination * Math.PI / 180;
+  const sinDeclination = Math.sin(declinationRadians);
+  const cosDeclination = Math.cos(declinationRadians);
+  const twilightThresholds = [0, -6, -12, -18].map((angle) => Math.sin(angle * Math.PI / 180));
+  const paths = ['', '', '', ''];
+  const xStep = 4;
+  const yStep = 2;
+
+  for (let x = 0; x < width; x += xStep) {
+    const longitude = -180 + ((x + xStep / 2) * 360 / width);
+    const hourAngle = (longitude - subsolarLongitude) * Math.PI / 180;
+    const cosHourAngle = Math.cos(hourAngle);
+    let currentState = -1;
+    let runStart = 0;
+
+    for (let y = 0; y <= height; y += yStep) {
+      let state = -1;
+      if (y < height) {
+        const latitude = (90 - ((y + yStep / 2) * 180 / height)) * Math.PI / 180;
+        const solarAltitude = Math.sin(latitude) * sinDeclination
+          + Math.cos(latitude) * cosDeclination * cosHourAngle;
+        state = solarAltitude >= twilightThresholds[0] ? 0
+          : solarAltitude >= twilightThresholds[1] ? 1
+            : solarAltitude >= twilightThresholds[2] ? 2
+              : solarAltitude >= twilightThresholds[3] ? 3 : 4;
+      }
+
+      if (state !== currentState) {
+        if (currentState > 0) {
+          const runHeight = y - runStart;
+          paths[currentState - 1] += `M${x} ${runStart}h${xStep}v${runHeight}h-${xStep}z`;
+        }
+        currentState = state;
+        runStart = y;
+      }
+    }
+  }
+  return { paths, ...solarPosition(timestamp) };
+}
+
+function locationMap(x, latitude, longitude, coordinatesProvided, markerColor, markerSize, nightStrength, mapData, now) {
+  const frameSeconds = 600;
+  const frameCount = 18;
+  const duration = frameSeconds * frameCount;
+  const start = Math.floor(now.getTime() / (frameSeconds * 1000)) * frameSeconds;
+  const frames = Array.from({ length: frameCount }, (_, index) => twilightPaths(start + index * frameSeconds));
+  const opacities = [105, 85, 60, 30].map((alpha) => Math.min(0.9, ((127 - alpha) / 127) * nightStrength));
+  const shading = frames[0].paths.map((path, index) => {
+    const pathValues = frames.map((frame) => frame.paths[index]).join(';');
+    return `<path d="${frames[0].paths[index]}" fill="#000008" fill-opacity="${opacities[index].toFixed(3)}"><animate attributeName="d" values="${pathValues}" dur="${duration}s" calcMode="discrete" repeatCount="indefinite"/></path>`;
+  }).join('');
+  const sunX = frames.map(({ subsolarLongitude }) => ((subsolarLongitude + 180) / 360) * 479);
+  const sunY = frames.map(({ declination }) => ((90 - declination) / 180) * 239);
+  const sun = `<g aria-label="Moving sun marker"><circle cx="${sunX[0].toFixed(2)}" cy="${sunY[0].toFixed(2)}" r="6.5" fill="none" stroke="#ffffff" stroke-width="1.5"><animate attributeName="cx" values="${sunX.map((value) => value.toFixed(2)).join(';')}" dur="${duration}s" calcMode="discrete" repeatCount="indefinite"/><animate attributeName="cy" values="${sunY.map((value) => value.toFixed(2)).join(';')}" dur="${duration}s" calcMode="discrete" repeatCount="indefinite"/></circle><circle cx="${sunX[0].toFixed(2)}" cy="${sunY[0].toFixed(2)}" r="3.5" fill="#ffcd32"><animate attributeName="cx" values="${sunX.map((value) => value.toFixed(2)).join(';')}" dur="${duration}s" calcMode="discrete" repeatCount="indefinite"/><animate attributeName="cy" values="${sunY.map((value) => value.toFixed(2)).join(';')}" dur="${duration}s" calcMode="discrete" repeatCount="indefinite"/></circle></g>`;
+  const markerX = coordinatesProvided ? Math.max(5, Math.min(475, ((longitude + 180) / 360) * 479)) : null;
+  const markerY = coordinatesProvided ? Math.max(5, Math.min(235, ((90 - latitude) / 180) * 239)) : null;
   const marker = coordinatesProvided
-    ? `<circle cx="${1 + ((longitude + 180) / 360) * 94}" cy="${1 + ((90 - latitude) / 180) * 30}" r="${markerSize + 2}" fill="${markerColor}" fill-opacity=".24"/><circle cx="${1 + ((longitude + 180) / 360) * 94}" cy="${1 + ((90 - latitude) / 180) * 30}" r="${markerSize}" fill="${markerColor}" stroke="#ffffff" stroke-width="1.2"/>`
-    : '<text x="48" y="18" text-anchor="middle" font-family="sans-serif" font-size="5" font-weight="600" letter-spacing=".7" fill="#ffffff">ADD COORDINATES</text>';
-  const map = `<g aria-label="${coordinatesProvided ? 'Map showing selected location' : 'Map; coordinates needed to place marker'}"><rect x="0" y="0" width="96" height="32" rx="4" fill="${water}"/><g fill="none" stroke="${grid}" stroke-opacity=".42" stroke-width=".35"><path d="M0 8h96M0 16h96M0 24h96M24 0v32M48 0v32M72 0v32"/></g><g fill="${land}" stroke="${grid}" stroke-opacity=".42" stroke-width=".45"><path d="M9 6 14 3 22 4 25 7 31 7 34 11 31 13 29 17 25 17 23 21 20 19 18 15 14 13 13 10 10 9z"/><path d="m28 19 5 1 3 4-2 4-2 3-2-3-1-4-3-3z"/><path d="m43 7 4-2 4 1 2 3-3 2-4-1z"/><path d="m45 12 6-1 4 3 1 5-3 6-3 3-2-4-3-4-2-5z"/><path d="m51 6 8-2 7 2 7-1 9 4-2 4-6 1-2 4-5-1-4-3-5 1-4-3-5 1-2-3z"/><path d="m73 22 5 1 3 3-3 3-5-1-2-3z"/></g>${marker}</g>`;
-  return `<svg x="${x}" y="3" width="96" height="32" viewBox="0 0 96 32">${map}</svg>`;
+    ? `<circle cx="${markerX.toFixed(2)}" cy="${markerY.toFixed(2)}" r="${markerSize + 4}" fill="${markerColor}" fill-opacity=".3"/><circle cx="${markerX.toFixed(2)}" cy="${markerY.toFixed(2)}" r="${markerSize}" fill="${markerColor}" stroke="#ffffff" stroke-width="2"/>`
+    : '';
+  const utcLabels = frames.map((_, index) => {
+    const stamp = start + index * frameSeconds;
+    const text = `UTC ${new Date(stamp * 1000).toISOString().slice(11, 16)}`;
+    const opacitiesForFrame = Array.from({ length: frameCount }, (_, frameIndex) => frameIndex === index ? '1' : '0').join(';');
+    return `<text x="465" y="18" text-anchor="end" font-family="sans-serif" font-size="10" fill="#ffffff" opacity="0">${text}<animate attributeName="opacity" values="${opacitiesForFrame}" dur="${duration}s" calcMode="discrete" repeatCount="indefinite"/></text>`;
+  }).join('');
+  const svg = `<svg x="${x}" y="0" width="240" height="120" viewBox="0 0 480 240" preserveAspectRatio="xMidYMid meet"><defs><clipPath id="mapClip"><rect width="480" height="240" rx="6"/></clipPath></defs><g clip-path="url(#mapClip)"><image width="480" height="240" href="data:image/jpeg;base64,${mapData}"/>${shading}${sun}${marker}<rect x="405" y="5" width="70" height="18" rx="3" fill="#000000" fill-opacity=".45"/>${utcLabels}</g></svg>`;
+  return svg;
 }
 
 function neutralFlag() {
@@ -123,12 +214,13 @@ async function renderClock(url) {
   const dayColor = normalizeColor(url.searchParams.get('daycolor'), '#f2c94c');
   const nightColor = normalizeColor(url.searchParams.get('nightcolor'), '#83aaff');
   const mapEnabled = url.searchParams.get('map') !== '0';
-  const mapWater = normalizeColor(url.searchParams.get('mapwater'), '#10242c');
-  const mapLand = normalizeColor(url.searchParams.get('mapland'), '#31545a');
-  const mapGrid = normalizeColor(url.searchParams.get('mapgrid'), '#557279');
-  const mapMarkerColor = normalizeColor(url.searchParams.get('mapmarker'), dotColor);
+  const mapMarkerColor = normalizeColor(url.searchParams.get('mapmarker'), '#5ae682');
   const rawMapMarkerSize = Number(url.searchParams.get('mapdot'));
-  const mapMarkerSize = Number.isInteger(rawMapMarkerSize) && rawMapMarkerSize >= 2 && rawMapMarkerSize <= 7 ? rawMapMarkerSize : 4;
+  const mapMarkerSize = Number.isInteger(rawMapMarkerSize) && rawMapMarkerSize >= 3 && rawMapMarkerSize <= 12 ? rawMapMarkerSize : 6;
+  const rawMapNightStrength = Number(url.searchParams.get('mapnight'));
+  const mapNightStrength = Number.isFinite(rawMapNightStrength) && rawMapNightStrength >= 0.6 && rawMapNightStrength <= 1.4
+    ? rawMapNightStrength
+    : 1;
   const rawLatitude = url.searchParams.get('lat');
   const rawLongitude = url.searchParams.get('lon');
   const latitude = rawLatitude !== null && rawLatitude.trim() !== '' ? Number(rawLatitude) : NaN;
@@ -184,23 +276,19 @@ async function renderClock(url) {
   const daylightDescription = sunEnabled
     ? ` — ${daylightText} ${coordinatesProvided ? 'at selected coordinates' : '(estimated from local time)'}`
     : '';
-  const title = `${timeZone} clock${visibleLabel ? ` — ${visibleLabel}` : ''}${daylightDescription}`;
+  const title = `${timeZone} clock${visibleLabel ? ` — ${visibleLabel}` : ''}${daylightDescription}${mapEnabled ? ' with animated day/night map' : ''}`;
   const badge = sunEnabled
     ? `<g aria-label="${daylightText}${coordinatesProvided ? ', solar-calculated' : ', estimated from local time'}"><rect x="${badgeX}" y="5" width="${badgeWidth}" height="20" rx="10" fill="${daylightColor}" fill-opacity=".16"/><circle cx="${badgeX + 8}" cy="15" r="2.5" fill="${dotColor}"/><text x="${badgeX + 14}" y="18" font-family="${FONT}" font-size="8" font-weight="600" fill="${daylightColor}">${daylightText}</text></g>`
     : '';
-  const mapX = sunEnabled ? badgeX + badgeWidth + 8 : (visibleLabel ? labelX + visibleLabel.length * 6.6 + 8 : x + 8);
+  const mapX = Math.max(width, sunEnabled ? badgeX + badgeWidth + 2 : 0) + 10;
+  const mapData = mapEnabled ? (await fs.readFile(path.join(PUBLIC_DIR, 'world.jpg'))).toString('base64') : '';
   const map = mapEnabled
-    ? locationMap(mapX, latitude, longitude, coordinatesProvided, {
-      water: mapWater, land: mapLand, grid: mapGrid, markerColor: mapMarkerColor, markerSize: mapMarkerSize,
-    })
+    ? locationMap(mapX, latitude, longitude, coordinatesProvided, mapMarkerColor, mapMarkerSize, mapNightStrength, mapData, now)
     : '';
-  const mapWidth = 96;
-  const contentWidth = mapEnabled
-    ? mapX + mapWidth + 2
-    : (sunEnabled ? badgeX + badgeWidth + 2 : (visibleLabel ? labelX + visibleLabel.length * 6.6 + 2 : x + 2));
-
-  const height = mapEnabled ? 38 : 30;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.max(width, contentWidth)}" height="${height}" viewBox="0 0 ${Math.max(width, contentWidth)} ${height}" role="img" aria-label="${escapeXml(title)}"><title>${escapeXml(title)}</title><defs><clipPath id="flagCorners"><rect width="18" height="12" rx="1.5"/></clipPath></defs><g transform="translate(1 9)">${flagMarkup}</g><g font-family="${FONT}" font-size="18" font-weight="600">${parts.join('')}</g>${visibleLabel ? `<text x="${labelX}" y="19.5" font-family="${FONT}" font-size="12" fill="${colors.label}">${escapeXml(visibleLabel)}</text>` : ''}${badge}${map}</svg>`;
+  const outputWidth = mapEnabled ? mapX + 242 : width;
+  const height = mapEnabled ? 120 : 30;
+  const clockTransform = mapEnabled ? 'translate(0 49)' : 'translate(0 0)';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${outputWidth}" height="${height}" viewBox="0 0 ${outputWidth} ${height}" role="img" aria-label="${escapeXml(title)}"><title>${escapeXml(title)}</title><defs><clipPath id="flagCorners"><rect width="18" height="12" rx="1.5"/></clipPath></defs><g transform="${clockTransform}"><g transform="translate(1 9)">${flagMarkup}</g><g font-family="${FONT}" font-size="18" font-weight="600">${parts.join('')}</g>${visibleLabel ? `<text x="${labelX}" y="19.5" font-family="${FONT}" font-size="12" fill="${colors.label}">${escapeXml(visibleLabel)}</text>` : ''}${badge}</g>${map}</svg>`;
 }
 
 async function serveStatic(request, response, pathname) {

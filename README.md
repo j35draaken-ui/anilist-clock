@@ -30,7 +30,7 @@ The creator starts with the browser's configured time zone (without requesting G
 
 ## Location, map, and daylight badge
 
-The clock includes an optional embedded world map with a location marker. The map is rendered directly into the SVG, needs no external tiles or services, and can be switched off under **Location map**. Customize the water, land, detail, and marker colors and marker size there. Choosing a city preset sets its approximate city-center coordinates; for custom time zones, enter latitude and longitude or use GPS. If coordinates are missing, the map says so instead of showing a misleading marker. Location coordinates are included in the generated public image URL.
+The clock includes the original embedded world map with the original moving sun marker and day/night, civil, nautical, and astronomical twilight boundaries. Its 18-frame animation advances in ten-minute steps across three hours. The map is included directly in the SVG and can be switched off under **Location map**. Customize the selected-location marker color and size and overall night shading there. Choosing a city preset sets its approximate city-center coordinates; for custom time zones, enter latitude and longitude or use GPS. Location coordinates are included in the generated public image URL. The bundled 480×240 `world.jpg` is included when uploading the contents of `public/` to InfinityFree.
 
 The clock also includes a small location dot and a day/night badge by default. You can hide the badge or customize its dot, day, and night colors under **Location & daylight badge**. With latitude and longitude, the badge estimates whether the sun is above the horizon using the selected date and location. Without them, it clearly uses a simple 06:00–18:00 local-time estimate instead.
 
@@ -44,4 +44,4 @@ GPS coordinates are rounded to one decimal place (roughly 11 km) before they are
 
 ## Sharing a clock
 
-The creator updates a direct `/clock.php` URL and the AniList `~~~img(URL)~~~` snippet as settings change. Both contain the chosen time zone, flag, label, theme, map visibility and styling, daylight-badge visibility and colors, and optional coordinates. The Node server responds to both `/clock.php` and `/clock.svg`; the PHP host responds to `/clock.php` directly and supports `/clock.svg` when its rewrite rules are enabled.
+The creator updates a direct `/clock.php` URL and the AniList `~~~img(URL)~~~` snippet as settings change. Both contain the chosen time zone, flag, label, theme, map visibility and marker/night styling, daylight-badge visibility and colors, and optional coordinates. The Node server responds to both `/clock.php` and `/clock.svg`; the PHP host responds to `/clock.php` directly and supports `/clock.svg` when its rewrite rules are enabled.

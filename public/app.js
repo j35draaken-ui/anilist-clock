@@ -176,11 +176,9 @@ const state = {
   lat: String(PLACE_COORDINATES[DEFAULT_PLACE?.[1]]?.[0] ?? ''),
   lon: String(PLACE_COORDINATES[DEFAULT_PLACE?.[1]]?.[1] ?? ''),
   map: true,
-  mapwater: '#10242c',
-  mapland: '#31545a',
-  mapgrid: '#557279',
-  mapmarker: '#2bd576',
-  mapdot: '4',
+  mapmarker: '#5ae682',
+  mapdot: '6',
+  mapnight: '1',
 };
 let customLabel = false;
 
@@ -195,12 +193,11 @@ const dotColorInput = $('dot-color');
 const dayColorInput = $('day-color');
 const nightColorInput = $('night-color');
 const mapEnabledInput = $('map-enabled');
-const mapWaterInput = $('map-water');
-const mapLandInput = $('map-land');
-const mapGridInput = $('map-grid');
 const mapMarkerColorInput = $('map-marker-color');
 const mapMarkerSizeInput = $('map-marker-size');
 const mapMarkerSizeValue = $('map-marker-size-value');
+const mapNightStrengthInput = $('map-night-strength');
+const mapNightStrengthValue = $('map-night-strength-value');
 const placeSearch = $('place-search');
 const placeOptions = $('place-options');
 const placeHint = $('place-hint');
@@ -283,11 +280,10 @@ function applyQueryState() {
   if (/^#[0-9a-f]{6}$/i.test(params.get('daycolor') || '')) state.daycolor = params.get('daycolor');
   if (/^#[0-9a-f]{6}$/i.test(params.get('nightcolor') || '')) state.nightcolor = params.get('nightcolor');
   if (params.has('map')) state.map = params.get('map') !== '0';
-  if (/^#[0-9a-f]{6}$/i.test(params.get('mapwater') || '')) state.mapwater = params.get('mapwater');
-  if (/^#[0-9a-f]{6}$/i.test(params.get('mapland') || '')) state.mapland = params.get('mapland');
-  if (/^#[0-9a-f]{6}$/i.test(params.get('mapgrid') || '')) state.mapgrid = params.get('mapgrid');
   if (/^#[0-9a-f]{6}$/i.test(params.get('mapmarker') || '')) state.mapmarker = params.get('mapmarker');
-  if (/^[2-7]$/.test(params.get('mapdot') || '')) state.mapdot = params.get('mapdot');
+  if (/^(?:[3-9]|1[0-2])$/.test(params.get('mapdot') || '')) state.mapdot = params.get('mapdot');
+  const mapNightStrength = Number(params.get('mapnight'));
+  if (Number.isFinite(mapNightStrength) && mapNightStrength >= 0.6 && mapNightStrength <= 1.4) state.mapnight = String(mapNightStrength);
   if (!params.has('label')) {
     if (place) state.label = place[1];
     else if (params.has('tz')) state.label = state.tz.split('/').pop().replaceAll('_', ' ');
@@ -312,11 +308,9 @@ function makeImageUrl() {
   params.set('daycolor', state.daycolor);
   params.set('nightcolor', state.nightcolor);
   params.set('map', state.map ? '1' : '0');
-  params.set('mapwater', state.mapwater);
-  params.set('mapland', state.mapland);
-  params.set('mapgrid', state.mapgrid);
   params.set('mapmarker', state.mapmarker);
   params.set('mapdot', state.mapdot);
+  params.set('mapnight', state.mapnight);
   return `${window.location.origin}/clock.php?${params.toString()}`;
 }
 
@@ -341,13 +335,13 @@ function syncControls() {
   dayColorInput.value = state.daycolor;
   nightColorInput.value = state.nightcolor;
   mapEnabledInput.checked = state.map;
-  mapWaterInput.value = state.mapwater;
-  mapLandInput.value = state.mapland;
-  mapGridInput.value = state.mapgrid;
   mapMarkerColorInput.value = state.mapmarker;
   mapMarkerSizeInput.value = state.mapdot;
   mapMarkerSizeValue.value = state.mapdot;
   mapMarkerSizeValue.textContent = state.mapdot;
+  mapNightStrengthInput.value = state.mapnight;
+  mapNightStrengthValue.value = `${state.mapnight}×`;
+  mapNightStrengthValue.textContent = `${state.mapnight}×`;
   document.querySelectorAll('.theme-choice').forEach((button) => {
     const active = button.dataset.theme === state.theme;
     button.classList.toggle('active', active);
@@ -381,11 +375,9 @@ function updateStudioUrl() {
   params.set('daycolor', state.daycolor);
   params.set('nightcolor', state.nightcolor);
   params.set('map', state.map ? '1' : '0');
-  params.set('mapwater', state.mapwater);
-  params.set('mapland', state.mapland);
-  params.set('mapgrid', state.mapgrid);
   params.set('mapmarker', state.mapmarker);
   params.set('mapdot', state.mapdot);
+  params.set('mapnight', state.mapnight);
   window.history.replaceState(null, '', `/?${params.toString()}`);
 }
 
@@ -650,11 +642,9 @@ dotColorInput.addEventListener('input', () => { state.dot = dotColorInput.value;
 dayColorInput.addEventListener('input', () => { state.daycolor = dayColorInput.value; render(); });
 nightColorInput.addEventListener('input', () => { state.nightcolor = nightColorInput.value; render(); });
 mapEnabledInput.addEventListener('change', () => { state.map = mapEnabledInput.checked; render(); });
-mapWaterInput.addEventListener('input', () => { state.mapwater = mapWaterInput.value; render(); });
-mapLandInput.addEventListener('input', () => { state.mapland = mapLandInput.value; render(); });
-mapGridInput.addEventListener('input', () => { state.mapgrid = mapGridInput.value; render(); });
 mapMarkerColorInput.addEventListener('input', () => { state.mapmarker = mapMarkerColorInput.value; render(); });
 mapMarkerSizeInput.addEventListener('input', () => { state.mapdot = mapMarkerSizeInput.value; render(); });
+mapNightStrengthInput.addEventListener('input', () => { state.mapnight = mapNightStrengthInput.value; render(); });
 document.querySelectorAll('.theme-choice').forEach((button) => button.addEventListener('click', () => { state.theme = button.dataset.theme; render(); }));
 document.querySelectorAll('[data-copy-target]').forEach((button) => button.addEventListener('click', () => copyText($(button.dataset.copyTarget).textContent, button)));
 locationButton.addEventListener('click', useCurrentLocation);
