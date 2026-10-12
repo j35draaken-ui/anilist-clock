@@ -151,8 +151,8 @@ function location_map(float $x, float $latitude, float $longitude, bool $coordin
     foreach ([0.25, 0.5, 0.75, 1.0] as $night_amount) {
         $band_colors[] = mix_colors($day_color, $night_color, $night_amount);
     }
-    $opacities = [0.06];
-    foreach ([0.26, 0.44, 0.62, 0.78] as $opacity) {
+    $opacities = [0.28];
+    foreach ([0.42, 0.58, 0.74, 0.88] as $opacity) {
         $opacities[] = min(0.9, $opacity * $night_strength);
     }
     $shading = '';

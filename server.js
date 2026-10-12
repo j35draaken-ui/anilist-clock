@@ -160,7 +160,7 @@ function locationMap(x, latitude, longitude, coordinatesProvided, markerColor, m
   const bandColors = [dayColor, 0.25, 0.5, 0.75, 1].map((amount) => (
     typeof amount === 'number' ? mixColors(dayColor, nightColor, amount) : amount
   ));
-  const opacities = [0.06, 0.26, 0.44, 0.62, 0.78]
+  const opacities = [0.28, 0.42, 0.58, 0.74, 0.88]
     .map((opacity, index) => index === 0 ? opacity : Math.min(0.9, opacity * nightStrength));
   const shading = frames[0].paths.map((path, index) => {
     const pathValues = frames.map((frame) => frame.paths[index]).join(';');
