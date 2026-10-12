@@ -137,8 +137,8 @@ function location_map(float $x, float $latitude, float $longitude, bool $coordin
         $frames[] = twilight_paths($start + $index * $frame_seconds);
     }
     $opacities = [];
-    foreach ([0.42, 0.58, 0.74, 0.88] as $opacity) {
-        $opacities[] = min(0.9, $opacity * $night_strength);
+    foreach ([105, 85, 60, 30] as $alpha) {
+        $opacities[] = min(0.9, ((127 - $alpha) / 127) * $night_strength);
     }
     $shading = '';
     foreach ($frames[0]['paths'] as $index => $path) {
@@ -249,13 +249,6 @@ function colon_svg(int $x, string $color): string
     return '<text x="' . ($x + 3) . '" y="20" text-anchor="middle" fill="' . $color . '">:<animate attributeName="opacity" values="1;0.28" calcMode="discrete" dur="1s" repeatCount="indefinite"/></text>';
 }
 
-function meridiem_svg(int $x, int $seconds_of_day, string $color): string
-{
-    $animation = 'attributeName="opacity" calcMode="discrete" dur="86400s" begin="-' . $seconds_of_day . 's" repeatCount="indefinite"';
-    return '<text x="' . ($x + 3) . '" y="19" font-size="8" fill="' . $color . '">AM<animate ' . $animation . ' values="1;0"/></text>'
-        . '<text x="' . ($x + 3) . '" y="19" font-size="8" fill="' . $color . '">PM<animate ' . $animation . ' values="0;1"/></text>';
-}
-
 function render_clock(): string
 {
     $requested_timezone = $_GET['tz'] ?? 'UTC';
@@ -272,8 +265,6 @@ function render_clock(): string
     $dot_color = normalize_color($_GET['dot'] ?? null, '#2bd576');
     $day_color = normalize_color($_GET['daycolor'] ?? null, '#f2c94c');
     $night_color = normalize_color($_GET['nightcolor'] ?? null, '#83aaff');
-    $seconds_color = normalize_color($_GET['secondscolor'] ?? null, $colors['seconds']);
-    $hour_format = ($_GET['format'] ?? '') === '12' ? '12' : '24';
     $map_enabled = ($_GET['map'] ?? '') !== '0';
     $map_marker_color = normalize_color($_GET['mapmarker'] ?? null, '#5ae682');
     $requested_marker_size = $_GET['mapdot'] ?? null;
@@ -311,26 +302,21 @@ function render_clock(): string
         : load_flag($flag);
     $flag_markup = $flag_data['markup'];
     $hours = [];
-    for ($index = 0; $index < ($hour_format === '12' ? 12 : 24); $index++) {
-        $hours[] = str_pad((string) ($hour_format === '12' ? $index + 1 : $index), 2, '0', STR_PAD_LEFT);
+    for ($index = 0; $index < 24; $index++) {
+        $hours[] = str_pad((string) $index, 2, '0', STR_PAD_LEFT);
     }
 
     $parts = [];
     $x = $flag_markup !== '' ? 26 : 1;
     $seconds_of_day = $hour * 3600 + $minute * 60 + $second;
-    $hours_offset = ($hour_format === '12' ? $hour % 12 : $hour) * 3600 + $minute * 60 + $second;
-    $parts[] = strip_svg($x, array_map(static fn(string $value): string => $value[0], $hours), 3600, $hours_offset, $colors['digits']); $x += 11;
-    $parts[] = strip_svg($x, array_map(static fn(string $value): string => $value[1], $hours), 3600, $hours_offset, $colors['digits']); $x += 11;
+    $parts[] = strip_svg($x, array_map(static fn(string $value): string => $value[0], $hours), 3600, $seconds_of_day, $colors['digits']); $x += 11;
+    $parts[] = strip_svg($x, array_map(static fn(string $value): string => $value[1], $hours), 3600, $seconds_of_day, $colors['digits']); $x += 11;
     $parts[] = colon_svg($x, $colors['colon']); $x += 6;
     $parts[] = strip_svg($x, str_split('012345'), 600, $minute * 60 + $second, $colors['digits']); $x += 11;
     $parts[] = strip_svg($x, str_split('0123456789'), 60, ($minute % 10) * 60 + $second, $colors['digits']); $x += 11;
     $parts[] = colon_svg($x, $colors['colon']); $x += 6;
-    $parts[] = strip_svg($x, str_split('012345'), 10, $second, $seconds_color); $x += 11;
-    $parts[] = strip_svg($x, str_split('0123456789'), 1, $second % 10, $seconds_color); $x += 11;
-    if ($hour_format === '12') {
-        $parts[] = meridiem_svg($x, $seconds_of_day, $colors['label']);
-        $x += 20;
-    }
+    $parts[] = strip_svg($x, str_split('012345'), 10, $second, $colors['seconds']); $x += 11;
+    $parts[] = strip_svg($x, str_split('0123456789'), 1, $second % 10, $colors['seconds']); $x += 11;
 
     $warning_label = $timezone_warning
         ? ($label !== '' ? $label . ' · UTC' : 'UTC fallback')
