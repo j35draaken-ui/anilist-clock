@@ -74,6 +74,13 @@ function normalizeColor(value, fallback) {
   return /^#[0-9a-f]{6}$/i.test(value || '') ? value : fallback;
 }
 
+function mixColors(dayColor, nightColor, nightAmount) {
+  const day = dayColor.slice(1).match(/.{2}/g).map((channel) => Number.parseInt(channel, 16));
+  const night = nightColor.slice(1).match(/.{2}/g).map((channel) => Number.parseInt(channel, 16));
+  const channels = day.map((channel, index) => Math.round(channel + (night[index] - channel) * nightAmount));
+  return `#${channels.map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
+}
+
 function solarPosition(timestamp) {
   const julianDate = timestamp / 86400 + 2440587.5;
   const century = (julianDate - 2451545) / 36525;
@@ -108,7 +115,7 @@ function twilightPaths(timestamp, width = 480, height = 240) {
   const sinDeclination = Math.sin(declinationRadians);
   const cosDeclination = Math.cos(declinationRadians);
   const twilightThresholds = [0, -6, -12, -18].map((angle) => Math.sin(angle * Math.PI / 180));
-  const paths = ['', '', '', ''];
+  const paths = ['', '', '', '', ''];
   const xStep = 4;
   const yStep = 2;
 
@@ -132,9 +139,9 @@ function twilightPaths(timestamp, width = 480, height = 240) {
       }
 
       if (state !== currentState) {
-        if (currentState > 0) {
+        if (currentState >= 0) {
           const runHeight = y - runStart;
-          paths[currentState - 1] += `M${x} ${runStart}h${xStep}v${runHeight}h-${xStep}z`;
+          paths[currentState] += `M${x} ${runStart}h${xStep}v${runHeight}h-${xStep}z`;
         }
         currentState = state;
         runStart = y;
@@ -144,16 +151,20 @@ function twilightPaths(timestamp, width = 480, height = 240) {
   return { paths, ...solarPosition(timestamp) };
 }
 
-function locationMap(x, latitude, longitude, coordinatesProvided, markerColor, markerSize, nightStrength, mapData, now) {
+function locationMap(x, latitude, longitude, coordinatesProvided, markerColor, markerSize, nightStrength, dayColor, nightColor, mapData, now) {
   const frameSeconds = 600;
   const frameCount = 18;
   const duration = frameSeconds * frameCount;
   const start = Math.floor(now.getTime() / (frameSeconds * 1000)) * frameSeconds;
   const frames = Array.from({ length: frameCount }, (_, index) => twilightPaths(start + index * frameSeconds));
-  const opacities = [105, 85, 60, 30].map((alpha) => Math.min(0.9, ((127 - alpha) / 127) * nightStrength));
+  const bandColors = [dayColor, 0.25, 0.5, 0.75, 1].map((amount) => (
+    typeof amount === 'number' ? mixColors(dayColor, nightColor, amount) : amount
+  ));
+  const opacities = [0.06, 0.26, 0.44, 0.62, 0.78]
+    .map((opacity, index) => index === 0 ? opacity : Math.min(0.9, opacity * nightStrength));
   const shading = frames[0].paths.map((path, index) => {
     const pathValues = frames.map((frame) => frame.paths[index]).join(';');
-    return `<path d="${frames[0].paths[index]}" fill="#000008" fill-opacity="${opacities[index].toFixed(3)}"><animate attributeName="d" values="${pathValues}" dur="${duration}s" calcMode="discrete" repeatCount="indefinite"/></path>`;
+    return `<path d="${frames[0].paths[index]}" fill="${bandColors[index]}" fill-opacity="${opacities[index].toFixed(3)}"><animate attributeName="d" values="${pathValues}" dur="${duration}s" calcMode="discrete" repeatCount="indefinite"/></path>`;
   }).join('');
   const sunX = frames.map(({ subsolarLongitude }) => ((subsolarLongitude + 180) / 360) * 479);
   const sunY = frames.map(({ declination }) => ((90 - declination) / 180) * 239);
@@ -222,6 +233,8 @@ async function renderClock(url) {
   const hourFormat = url.searchParams.get('format') === '12' ? '12' : '24';
   const mapEnabled = url.searchParams.get('map') !== '0';
   const mapMarkerColor = normalizeColor(url.searchParams.get('mapmarker'), '#5ae682');
+  const mapDayColor = normalizeColor(url.searchParams.get('mapdaycolor'), '#ffffff');
+  const mapNightColor = normalizeColor(url.searchParams.get('mapnightcolor'), '#000008');
   const rawMapMarkerSize = Number(url.searchParams.get('mapdot'));
   const mapMarkerSize = Number.isInteger(rawMapMarkerSize) && rawMapMarkerSize >= 3 && rawMapMarkerSize <= 12 ? rawMapMarkerSize : 6;
   const rawMapNightStrength = Number(url.searchParams.get('mapnight'));
@@ -295,7 +308,7 @@ async function renderClock(url) {
   const mapX = Math.max(width, sunEnabled ? badgeX + badgeWidth + 2 : 0) + 10;
   const mapData = mapEnabled ? (await fs.readFile(path.join(PUBLIC_DIR, 'world.jpg'))).toString('base64') : '';
   const map = mapEnabled
-    ? locationMap(mapX, latitude, longitude, coordinatesProvided, mapMarkerColor, mapMarkerSize, mapNightStrength, mapData, now)
+    ? locationMap(mapX, latitude, longitude, coordinatesProvided, mapMarkerColor, mapMarkerSize, mapNightStrength, mapDayColor, mapNightColor, mapData, now)
     : '';
   const outputWidth = mapEnabled ? mapX + 242 : width;
   const height = mapEnabled ? 120 : 30;

@@ -43,6 +43,17 @@ function normalize_color(mixed $value, string $fallback): string
     return is_string($value) && preg_match('/^#[a-f0-9]{6}$/iD', $value) === 1 ? $value : $fallback;
 }
 
+function mix_colors(string $day_color, string $night_color, float $night_amount): string
+{
+    $day = array_map('hexdec', str_split(substr($day_color, 1), 2));
+    $night = array_map('hexdec', str_split(substr($night_color, 1), 2));
+    $channels = [];
+    foreach ($day as $index => $channel) {
+        $channels[] = (int) round($channel + ($night[$index] - $channel) * $night_amount);
+    }
+    return sprintf('#%02x%02x%02x', ...$channels);
+}
+
 function solar_position(int $timestamp): array
 {
     $julian_date = $timestamp / 86400 + 2440587.5;
@@ -92,7 +103,7 @@ function twilight_paths(int $timestamp): array
         $threshold = sin(deg2rad($threshold));
     }
     unset($threshold);
-    $paths = ['', '', '', ''];
+    $paths = ['', '', '', '', ''];
 
     for ($x = 0; $x < $width; $x += 4) {
         $longitude = -180 + (($x + 2) * 360 / $width);
@@ -113,9 +124,9 @@ function twilight_paths(int $timestamp): array
                             : ($solar_altitude >= $thresholds[3] ? 3 : 4)));
             }
             if ($state !== $current_state) {
-                if ($current_state > 0) {
+                if ($current_state >= 0) {
                     $run_height = $y - $run_start;
-                    $paths[$current_state - 1] .= 'M' . $x . ' ' . $run_start . 'h4v' . $run_height . 'h-4z';
+                    $paths[$current_state] .= 'M' . $x . ' ' . $run_start . 'h4v' . $run_height . 'h-4z';
                 }
                 $current_state = $state;
                 $run_start = $y;
@@ -126,7 +137,7 @@ function twilight_paths(int $timestamp): array
     return ['paths' => $paths, ...$solar];
 }
 
-function location_map(float $x, float $latitude, float $longitude, bool $coordinates_provided, string $marker_color, int $marker_size, float $night_strength, string $map_data, int $now): string
+function location_map(float $x, float $latitude, float $longitude, bool $coordinates_provided, string $marker_color, int $marker_size, float $night_strength, string $day_color, string $night_color, string $map_data, int $now): string
 {
     $frame_seconds = 600;
     $frame_count = 18;
@@ -136,14 +147,18 @@ function location_map(float $x, float $latitude, float $longitude, bool $coordin
     for ($index = 0; $index < $frame_count; $index++) {
         $frames[] = twilight_paths($start + $index * $frame_seconds);
     }
-    $opacities = [];
-    foreach ([105, 85, 60, 30] as $alpha) {
-        $opacities[] = min(0.9, ((127 - $alpha) / 127) * $night_strength);
+    $band_colors = [$day_color];
+    foreach ([0.25, 0.5, 0.75, 1.0] as $night_amount) {
+        $band_colors[] = mix_colors($day_color, $night_color, $night_amount);
+    }
+    $opacities = [0.06];
+    foreach ([0.26, 0.44, 0.62, 0.78] as $opacity) {
+        $opacities[] = min(0.9, $opacity * $night_strength);
     }
     $shading = '';
     foreach ($frames[0]['paths'] as $index => $path) {
         $path_values = implode(';', array_column(array_column($frames, 'paths'), $index));
-        $shading .= '<path d="' . $path . '" fill="#000008" fill-opacity="' . number_format($opacities[$index], 3, '.', '') . '"><animate attributeName="d" values="' . $path_values . '" dur="' . $duration . 's" calcMode="discrete" repeatCount="indefinite"/></path>';
+        $shading .= '<path d="' . $path . '" fill="' . $band_colors[$index] . '" fill-opacity="' . number_format($opacities[$index], 3, '.', '') . '"><animate attributeName="d" values="' . $path_values . '" dur="' . $duration . 's" calcMode="discrete" repeatCount="indefinite"/></path>';
     }
 
     $sun_x = $sun_y = [];
@@ -272,6 +287,8 @@ function render_clock(): string
     $dot_color = normalize_color($_GET['dot'] ?? null, '#2bd576');
     $day_color = normalize_color($_GET['daycolor'] ?? null, '#f2c94c');
     $night_color = normalize_color($_GET['nightcolor'] ?? null, '#83aaff');
+    $map_day_color = normalize_color($_GET['mapdaycolor'] ?? null, '#ffffff');
+    $map_night_color = normalize_color($_GET['mapnightcolor'] ?? null, '#000008');
     $seconds_color = normalize_color($_GET['secondscolor'] ?? null, $colors['seconds']);
     $hour_format = ($_GET['format'] ?? '') === '12' ? '12' : '24';
     $map_enabled = ($_GET['map'] ?? '') !== '0';
@@ -375,7 +392,7 @@ function render_clock(): string
         $map_data = base64_encode($map_image);
     }
     $map = $map_enabled
-        ? location_map($map_x, $coordinates_provided ? (float) $latitude_value : 0, $coordinates_provided ? (float) $longitude_value : 0, $coordinates_provided, $map_marker_color, $map_marker_size, $map_night_strength, $map_data, $now->getTimestamp())
+        ? location_map($map_x, $coordinates_provided ? (float) $latitude_value : 0, $coordinates_provided ? (float) $longitude_value : 0, $coordinates_provided, $map_marker_color, $map_marker_size, $map_night_strength, $map_day_color, $map_night_color, $map_data, $now->getTimestamp())
         : '';
     $output_width = $map_enabled ? (int) round($map_x + 242) : $width;
     $height = $map_enabled ? 120 : 30;

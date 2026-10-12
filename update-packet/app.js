@@ -182,6 +182,8 @@ const state = {
   mapmarker: '#5ae682',
   mapdot: '6',
   mapnight: '1',
+  mapdaycolor: '#ffffff',
+  mapnightcolor: '#000008',
 };
 let customLabel = false;
 let customSecondsColor = false;
@@ -200,6 +202,8 @@ const secondsColorInput = $('seconds-color');
 const timeFormatInput = $('time-format');
 const mapEnabledInput = $('map-enabled');
 const mapMarkerColorInput = $('map-marker-color');
+const mapDayColorInput = $('map-day-color');
+const mapNightColorInput = $('map-night-color');
 const mapMarkerSizeInput = $('map-marker-size');
 const mapMarkerSizeValue = $('map-marker-size-value');
 const mapNightStrengthInput = $('map-night-strength');
@@ -293,6 +297,8 @@ function applyQueryState() {
   if (/^#[0-9a-f]{6}$/i.test(params.get('nightcolor') || '')) state.nightcolor = params.get('nightcolor');
   if (params.has('map')) state.map = params.get('map') !== '0';
   if (/^#[0-9a-f]{6}$/i.test(params.get('mapmarker') || '')) state.mapmarker = params.get('mapmarker');
+  if (/^#[0-9a-f]{6}$/i.test(params.get('mapdaycolor') || '')) state.mapdaycolor = params.get('mapdaycolor');
+  if (/^#[0-9a-f]{6}$/i.test(params.get('mapnightcolor') || '')) state.mapnightcolor = params.get('mapnightcolor');
   if (/^(?:[3-9]|1[0-2])$/.test(params.get('mapdot') || '')) state.mapdot = params.get('mapdot');
   const mapNightStrength = Number(params.get('mapnight'));
   if (Number.isFinite(mapNightStrength) && mapNightStrength >= 0.6 && mapNightStrength <= 1.4) state.mapnight = String(mapNightStrength);
@@ -323,6 +329,8 @@ function makeImageUrl() {
   params.set('format', state.format);
   params.set('map', state.map ? '1' : '0');
   params.set('mapmarker', state.mapmarker);
+  params.set('mapdaycolor', state.mapdaycolor);
+  params.set('mapnightcolor', state.mapnightcolor);
   params.set('mapdot', state.mapdot);
   params.set('mapnight', state.mapnight);
   params.set('v', IMAGE_VERSION);
@@ -353,6 +361,8 @@ function syncControls() {
   timeFormatInput.value = state.format;
   mapEnabledInput.checked = state.map;
   mapMarkerColorInput.value = state.mapmarker;
+  mapDayColorInput.value = state.mapdaycolor;
+  mapNightColorInput.value = state.mapnightcolor;
   mapMarkerSizeInput.value = state.mapdot;
   mapMarkerSizeValue.value = state.mapdot;
   mapMarkerSizeValue.textContent = state.mapdot;
@@ -395,6 +405,8 @@ function updateStudioUrl() {
   params.set('format', state.format);
   params.set('map', state.map ? '1' : '0');
   params.set('mapmarker', state.mapmarker);
+  params.set('mapdaycolor', state.mapdaycolor);
+  params.set('mapnightcolor', state.mapnightcolor);
   params.set('mapdot', state.mapdot);
   params.set('mapnight', state.mapnight);
   window.history.replaceState(null, '', `/?${params.toString()}`);
@@ -664,6 +676,8 @@ secondsColorInput.addEventListener('input', () => { state.secondscolor = seconds
 timeFormatInput.addEventListener('change', () => { state.format = timeFormatInput.value === '12' ? '12' : '24'; render(); });
 mapEnabledInput.addEventListener('change', () => { state.map = mapEnabledInput.checked; render(); });
 mapMarkerColorInput.addEventListener('input', () => { state.mapmarker = mapMarkerColorInput.value; render(); });
+mapDayColorInput.addEventListener('input', () => { state.mapdaycolor = mapDayColorInput.value; render(); });
+mapNightColorInput.addEventListener('input', () => { state.mapnightcolor = mapNightColorInput.value; render(); });
 mapMarkerSizeInput.addEventListener('input', () => { state.mapdot = mapMarkerSizeInput.value; render(); });
 mapNightStrengthInput.addEventListener('input', () => { state.mapnight = mapNightStrengthInput.value; render(); });
 document.querySelectorAll('.theme-choice').forEach((button) => button.addEventListener('click', () => {
