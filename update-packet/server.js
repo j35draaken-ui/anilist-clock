@@ -202,6 +202,11 @@ function colon(x, color) {
   return `<text x="${x + 3}" y="20" text-anchor="middle" fill="${color}">:<animate attributeName="opacity" values="1;0.28" calcMode="discrete" dur="1s" repeatCount="indefinite"/></text>`;
 }
 
+function meridiem(x, secondsOfDay, color) {
+  const animation = `attributeName="opacity" calcMode="discrete" dur="86400s" begin="-${secondsOfDay}s" repeatCount="indefinite"`;
+  return `<text x="${x + 3}" y="19" font-size="8" fill="${color}">AM<animate ${animation} values="1;0"/></text><text x="${x + 3}" y="19" font-size="8" fill="${color}">PM<animate ${animation} values="0;1"/></text>`;
+}
+
 async function renderClock(url) {
   const requestedTimeZone = url.searchParams.get('tz') || 'UTC';
   const requestedFlag = String(url.searchParams.get('flag') || '').trim().toLowerCase();
@@ -213,6 +218,8 @@ async function renderClock(url) {
   const dotColor = normalizeColor(url.searchParams.get('dot'), '#2bd576');
   const dayColor = normalizeColor(url.searchParams.get('daycolor'), '#f2c94c');
   const nightColor = normalizeColor(url.searchParams.get('nightcolor'), '#83aaff');
+  const secondsColor = normalizeColor(url.searchParams.get('secondscolor'), colors.seconds);
+  const hourFormat = url.searchParams.get('format') === '12' ? '12' : '24';
   const mapEnabled = url.searchParams.get('map') !== '0';
   const mapMarkerColor = normalizeColor(url.searchParams.get('mapmarker'), '#5ae682');
   const rawMapMarkerSize = Number(url.searchParams.get('mapdot'));
@@ -246,19 +253,24 @@ async function renderClock(url) {
   const flagMarkup = flagData.markup;
   const d10 = '0123456789'.split('');
   const d6 = '012345'.split('');
-  const hours = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0'));
+  const hours = Array.from({ length: hourFormat === '12' ? 12 : 24 }, (_, index) => String(hourFormat === '12' ? index + 1 : index).padStart(2, '0'));
   const secondsOfDay = time.h * 3600 + time.m * 60 + time.s;
+  const hoursOffset = (hourFormat === '12' ? time.h % 12 : time.h) * 3600 + time.m * 60 + time.s;
   const parts = [];
   let x = flagMarkup ? 26 : 1;
 
-  parts.push(strip(x, hours.map((value) => value[0]), 3600, secondsOfDay, colors.digits)); x += 11;
-  parts.push(strip(x, hours.map((value) => value[1]), 3600, secondsOfDay, colors.digits)); x += 11;
+  parts.push(strip(x, hours.map((value) => value[0]), 3600, hoursOffset, colors.digits)); x += 11;
+  parts.push(strip(x, hours.map((value) => value[1]), 3600, hoursOffset, colors.digits)); x += 11;
   parts.push(colon(x, colors.colon)); x += 6;
   parts.push(strip(x, d6, 600, time.m * 60 + time.s, colors.digits)); x += 11;
   parts.push(strip(x, d10, 60, (time.m % 10) * 60 + time.s, colors.digits)); x += 11;
   parts.push(colon(x, colors.colon)); x += 6;
-  parts.push(strip(x, d6, 10, time.s, colors.seconds)); x += 11;
-  parts.push(strip(x, d10, 1, time.s % 10, colors.seconds)); x += 11;
+  parts.push(strip(x, d6, 10, time.s, secondsColor)); x += 11;
+  parts.push(strip(x, d10, 1, time.s % 10, secondsColor)); x += 11;
+  if (hourFormat === '12') {
+    parts.push(meridiem(x, secondsOfDay, colors.label));
+    x += 20;
+  }
 
   const warningLabel = timezoneWarning
     ? (label ? `${label} · UTC` : 'UTC fallback')

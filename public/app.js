@@ -164,7 +164,7 @@ const PLACE_COORDINATES = {
 
 const DEFAULT_TIME_ZONE = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 const DEFAULT_PLACE = PLACES.find((place) => place[2] === DEFAULT_TIME_ZONE);
-const IMAGE_VERSION = '20261011';
+const IMAGE_VERSION = '20261012';
 const state = {
   tz: DEFAULT_TIME_ZONE,
   flag: DEFAULT_PLACE?.[3] || '',
@@ -174,6 +174,8 @@ const state = {
   dot: '#2bd576',
   daycolor: '#f2c94c',
   nightcolor: '#83aaff',
+  secondscolor: '#55d6e8',
+  format: '24',
   lat: String(PLACE_COORDINATES[DEFAULT_PLACE?.[1]]?.[0] ?? ''),
   lon: String(PLACE_COORDINATES[DEFAULT_PLACE?.[1]]?.[1] ?? ''),
   map: true,
@@ -182,6 +184,7 @@ const state = {
   mapnight: '1',
 };
 let customLabel = false;
+let customSecondsColor = false;
 
 const $ = (id) => document.getElementById(id);
 const timezoneInput = $('timezone-input');
@@ -193,6 +196,8 @@ const sunEnabledInput = $('sun-enabled');
 const dotColorInput = $('dot-color');
 const dayColorInput = $('day-color');
 const nightColorInput = $('night-color');
+const secondsColorInput = $('seconds-color');
+const timeFormatInput = $('time-format');
 const mapEnabledInput = $('map-enabled');
 const mapMarkerColorInput = $('map-marker-color');
 const mapMarkerSizeInput = $('map-marker-size');
@@ -272,6 +277,12 @@ function applyQueryState() {
     customLabel = params.get('labelauto') !== '1' && state.label !== automaticLabel;
   }
   if (params.has('theme')) state.theme = params.get('theme') === 'light' ? 'light' : 'dark';
+  state.secondscolor = state.theme === 'light' ? '#187f9a' : '#55d6e8';
+  if (/^#[0-9a-f]{6}$/i.test(params.get('secondscolor') || '')) {
+    state.secondscolor = params.get('secondscolor');
+    customSecondsColor = true;
+  }
+  if (params.get('format') === '12') state.format = '12';
   if (params.has('sun')) state.sun = params.get('sun') !== '0';
   if (params.has('lat') || params.has('lon')) {
     state.lat = params.get('lat') || '';
@@ -308,6 +319,8 @@ function makeImageUrl() {
   params.set('dot', state.dot);
   params.set('daycolor', state.daycolor);
   params.set('nightcolor', state.nightcolor);
+  if (customSecondsColor) params.set('secondscolor', state.secondscolor);
+  params.set('format', state.format);
   params.set('map', state.map ? '1' : '0');
   params.set('mapmarker', state.mapmarker);
   params.set('mapdot', state.mapdot);
@@ -336,6 +349,8 @@ function syncControls() {
   dotColorInput.value = state.dot;
   dayColorInput.value = state.daycolor;
   nightColorInput.value = state.nightcolor;
+  secondsColorInput.value = state.secondscolor;
+  timeFormatInput.value = state.format;
   mapEnabledInput.checked = state.map;
   mapMarkerColorInput.value = state.mapmarker;
   mapMarkerSizeInput.value = state.mapdot;
@@ -376,6 +391,8 @@ function updateStudioUrl() {
   params.set('dot', state.dot);
   params.set('daycolor', state.daycolor);
   params.set('nightcolor', state.nightcolor);
+  if (customSecondsColor) params.set('secondscolor', state.secondscolor);
+  params.set('format', state.format);
   params.set('map', state.map ? '1' : '0');
   params.set('mapmarker', state.mapmarker);
   params.set('mapdot', state.mapdot);
@@ -643,11 +660,17 @@ sunEnabledInput.addEventListener('change', () => { state.sun = sunEnabledInput.c
 dotColorInput.addEventListener('input', () => { state.dot = dotColorInput.value; render(); });
 dayColorInput.addEventListener('input', () => { state.daycolor = dayColorInput.value; render(); });
 nightColorInput.addEventListener('input', () => { state.nightcolor = nightColorInput.value; render(); });
+secondsColorInput.addEventListener('input', () => { state.secondscolor = secondsColorInput.value; customSecondsColor = true; render(); });
+timeFormatInput.addEventListener('change', () => { state.format = timeFormatInput.value === '12' ? '12' : '24'; render(); });
 mapEnabledInput.addEventListener('change', () => { state.map = mapEnabledInput.checked; render(); });
 mapMarkerColorInput.addEventListener('input', () => { state.mapmarker = mapMarkerColorInput.value; render(); });
 mapMarkerSizeInput.addEventListener('input', () => { state.mapdot = mapMarkerSizeInput.value; render(); });
 mapNightStrengthInput.addEventListener('input', () => { state.mapnight = mapNightStrengthInput.value; render(); });
-document.querySelectorAll('.theme-choice').forEach((button) => button.addEventListener('click', () => { state.theme = button.dataset.theme; render(); }));
+document.querySelectorAll('.theme-choice').forEach((button) => button.addEventListener('click', () => {
+  state.theme = button.dataset.theme;
+  if (!customSecondsColor) state.secondscolor = state.theme === 'light' ? '#187f9a' : '#55d6e8';
+  render();
+}));
 document.querySelectorAll('[data-copy-target]').forEach((button) => button.addEventListener('click', () => copyText($(button.dataset.copyTarget).textContent, button)));
 locationButton.addEventListener('click', useCurrentLocation);
 document.querySelector('#use-device-timezone').addEventListener('click', useDeviceTimeZone);
